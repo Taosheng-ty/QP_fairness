@@ -12,6 +12,7 @@ from progressbar import progressbar
 import pandas as pd
 import gc
 import unittest
+from collections import defaultdict
 FOLDDATA_WRITE_VERSION = 4
 
 def _add_zero_to_vector(vector):
@@ -86,17 +87,20 @@ class DataSet(object):
     return [DataFold(self, i, path) for i, path in enumerate(self.data_paths)]
 
 class DataFoldSplit(object):
-  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector):
+  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector,queryLeastLength=0):
     self.datafold = datafold
     self.name = name
     self.doclist_ranges = doclist_ranges
     self.feature_matrix = feature_matrix
     self.label_vector = label_vector
-    n_query=self.num_queries()
-    self.queriesList=np.arange(n_query)
+    self.queriesList=self.filtered_query_sizes(queryLeastLength)
+    self.exposure=np.zeros_like(label_vector).astype(np.float32)
+    self.query_freq=np.zeros(self.num_queries_orig())
+    self.cacheLists=defaultdict(list)
+  def num_queries_orig(self):
+    return self.doclist_ranges.shape[0] 
   def num_queries(self):
-    return self.doclist_ranges.shape[0] - 1
-
+    return len(self.queriesList)
   def num_docs(self):
     return self.feature_matrix.shape[0]
 
@@ -130,16 +134,10 @@ class DataFoldSplit(object):
 
   def filtered_query_sizes(self,cutoff):
     selected_query=np.where(self.query_sizes()>cutoff)[0]
-    print("filterd and removed ",self.num_queries()-selected_query.shape[0],"in",
-          self.num_queries(),"ratio is",
-          str(1-selected_query.shape[0]/self.num_queries()))
+    print("filterd and removed ",self.num_queries_orig()-selected_query.shape[0],"in",
+          self.num_queries_orig(),"ratio is",
+          str(1-selected_query.shape[0]/self.num_queries_orig()))
     self.queriesList=selected_query
-    # return (self.doclist_ranges[1:] - self.doclist_ranges[:-1])
-  def get_filtered_queries(self):
-
-    return self.queriesList
-  def get_queriesList(self):
-
     return self.queriesList
 
   def max_query_size(self):
@@ -439,7 +437,7 @@ class DataFold(object):
     self._data_ready = True
 
 
-def get_data(dataset,dataset_info_path,fold_id):
+def get_data(dataset,dataset_info_path,fold_id,query_least_size=0):
     data = get_dataset_from_json_info(
                   dataset,
                   dataset_info_path,
@@ -448,6 +446,8 @@ def get_data(dataset,dataset_info_path,fold_id):
     fold_id = (fold_id-1)%data.num_folds()
     data = data.get_data_folds()[fold_id]
     data.read_data()
+    for data_split in [data.test,data.train,data.validation]:
+      data_split.filtered_query_sizes(query_least_size)
     return data
 def get_query_aver_length(data):
     total_docs=data.train.num_docs()+\
