@@ -98,7 +98,7 @@ class DataFoldSplit(object):
     self.query_freq=np.zeros(self.num_queries_orig())
     self.cacheLists=defaultdict(list)
   def num_queries_orig(self):
-    return self.doclist_ranges.shape[0] 
+    return self.doclist_ranges.shape[0] -1
   def num_queries(self):
     return len(self.queriesList)
   def num_docs(self):
@@ -132,11 +132,11 @@ class DataFoldSplit(object):
   def query_sizes(self):
     return (self.doclist_ranges[1:] - self.doclist_ranges[:-1])
 
-  def filtered_query_sizes(self,cutoff):
-    selected_query=np.where(self.query_sizes()>cutoff)[0]
-    print("filterd and removed ",self.num_queries_orig()-selected_query.shape[0],"in",
-          self.num_queries_orig(),"ratio is",
-          str(1-selected_query.shape[0]/self.num_queries_orig()))
+  def filtered_query_sizes(self,queryLeastLength):
+    selected_query=np.where(self.query_sizes()>queryLeastLength)[0]
+    # print("filterd and removed ",self.num_queries_orig()-selected_query.shape[0],"in",
+    #       self.num_queries_orig(),"ratio is",
+    #       str(1-selected_query.shape[0]/self.num_queries_orig()))
     self.queriesList=selected_query
     return self.queriesList
 

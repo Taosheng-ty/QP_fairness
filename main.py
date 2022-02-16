@@ -6,8 +6,13 @@ import utils.evaluation as evl
 from collections import defaultdict
 from progressbar import progressbar
 import argparse
+from str2bool import str2bool
 import json
 import os
+import random
+import sys
+sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
+import results_org as results_org
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--log_dir", type=str,
@@ -29,9 +34,9 @@ if __name__ == '__main__':
                     help="Maximum number of items that can be displayed.",
                     default=10)
     parser.add_argument("--fairness_strategy", type=str,
-                        choices=['FairCo', 'FairCo_multip.', 'QPfair'],
+                        choices=['FairCo', 'FairCo_multip.', 'QPfair','FairCo_average',"Randomk","Topk"],
                         default="QPfair",
-                        help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPfair']")
+                        help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPfair','FairCo_average','Randomk','Topk']")
     parser.add_argument("--fairness_tradeoff_param", type=float,
                             default=1.0,
                             help="fairness_tradeoff_param")
@@ -42,12 +47,14 @@ if __name__ == '__main__':
                     help="Severity of positional bias",
                     default=1)
     parser.add_argument("--n_iteration", type=int,
-                    default=10**5,
+                    default=10**4,
                     help="how many iteractions to simulate")
     parser.add_argument("--n_futureSession", type=int,
                     default=20,
                     help="how many future session we want consider in advance, only works if we use QPfair strategy.")
-   
+    parser.add_argument("--progressbar",  type=str2bool, nargs='?',
+                    const=True, default=True,
+                    help="use progressbar or not.")
     args = parser.parse_args()
     # args = parser.parse_args(args=[]) # for debug
     # load the data and filter out queries with number of documents less than query_least_size.
@@ -56,16 +63,26 @@ if __name__ == '__main__':
                   args.fold_id,
                   args.query_least_size)
     # begin simulation
+    Logging=results_org.getLogging()
     positionBias=sim.getpositionBias(args.rankListLength,args.positionBiasSeverity) 
     NDCGcutoffs=[i for i in [1,3,5,10,20] if i<=args.rankListLength]
     assert args.rankListLength>=args.query_least_size, print("For simplicity, the ranked list length should be greater than doc length")
     queryRndSeed=np.random.default_rng(args.random_seed) 
+    random.seed(args.random_seed)
     OutputDict=defaultdict(list)
     NDCGDict=defaultdict(list)
     evalIterations=np.linspace(0, args.n_iteration-1, num=21,endpoint=True).astype(np.int32)[1:]
-    for iteration in progressbar(range(args.n_iteration)):
+    iterationsGenerator=progressbar(range(args.n_iteration)) if args.progressbar else range(args.n_iteration)
+    for iteration in iterationsGenerator:
         # sample data split and a query
         qid,dataSplit=sim.sample_queryFromdata(data,queryRndSeed)
+        if iteration in evalIterations:
+            Logging.info("current iteration"+str(iteration))
+            OutputDict["iterations"].append(iteration)
+            evl.outputNDCG(NDCGDict,OutputDict)
+            evl.outputFairness(data,OutputDict)
+        if dataSplit.name !="test":
+            continue
         # get a ranking according to fairness strategy
         ranking=rnk.get_ranking(qid,\
                                 dataSplit,\
@@ -78,10 +95,7 @@ if __name__ == '__main__':
         rnk.updateExposure(qid,dataSplit,ranking,positionBias)
         # calculate metrics ndcg and unfairness.
         evl.Update_NDCG_multipleCutoffs(ranking,qid,dataSplit,positionBias,NDCGcutoffs,NDCGDict)
-        if iteration in evalIterations:
-            OutputDict["iterations"].append(iteration)
-            evl.outputNDCG(NDCGDict,OutputDict)
-            evl.outputFairness(data,OutputDict)
+
     #write the results.
     os.makedirs(args.log_dir,exist_ok=True)
     logPath=args.log_dir+"/result.jjson"

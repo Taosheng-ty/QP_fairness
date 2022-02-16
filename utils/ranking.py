@@ -1,5 +1,6 @@
 import numpy as np
 from qpsolvers import solve_qp
+import random
 def unfairnessDoc(obs,relevance_esti_orig,fairness_strategy,**kwargs):
 
     """
@@ -23,7 +24,7 @@ def unfairnessDoc(obs,relevance_esti_orig,fairness_strategy,**kwargs):
       unfairness = np.max(swap_reward,axis=0)
       unfairness=unfairness/(np.max(np.abs(unfairness))+1e-10)
 
-    elif fairness_strategy=="FairCo_v1": 
+    elif fairness_strategy=="FairCo_multip.": 
       swap_reward = obs[:,None]*relevance_esti[None,:]
       unfairness = np.max(swap_reward-swap_reward.T,axis=0)
       unfairness=unfairness/(np.max(np.abs(unfairness))+1e-10)
@@ -114,7 +115,7 @@ def getExpoBackwardCum(n_futureSession,rankListLength,positionBias):
             ExpoBackwardCum[i,j]=cum    
     return ExpoBackwardCum
 
-    
+
 def getVerticalRanking(q_rel,rankListLength,n_futureSession,ExpoBackwardCum,QuotaEachItem,positionBias):
     """
     This funciton outputs ranklists by an vertical way.
@@ -147,6 +148,7 @@ def getFutureRanking(obs,q_rel,positionBias,n_futureSession,rankListLength,fairn
     QuotaEachItem=getQuotaEachItem(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param)
     ExpoBackwardCum=getExpoBackwardCum(n_futureSession,rankListLength,positionBias)
     rankLists=getVerticalRanking(q_rel,rankListLength,n_futureSession,ExpoBackwardCum,QuotaEachItem,positionBias)
+    random.shuffle(rankLists)
     return rankLists
 def get_ranking(qid,dataSplit,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None):
     """
@@ -154,12 +156,18 @@ def get_ranking(qid,dataSplit,fairness_strategy,fairness_tradeoff_param,rankList
     """
     qRel=dataSplit.query_values_from_vector(qid,dataSplit.label_vector)
     qExpVector=dataSplit.query_values_from_vector(qid,dataSplit.exposure)
-    if fairness_strategy in ["FairCo","FairCo_maxnorm","FairCo_v1"]:
+    if fairness_strategy in ["FairCo","FairCo_maxnorm",'FairCo_multip.',"FairCo_average"]:
       Docunfairness=unfairnessDoc(qExpVector,qRel,fairness_strategy)
       RankingScore=qRel+fairness_tradeoff_param*Docunfairness
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)
-    if fairness_strategy in ["QPfair"]:
+    elif fairness_strategy in ["QPfair"]:
       if len(dataSplit.cacheLists[qid])<=0:
         dataSplit.cacheLists[qid]=getFutureRanking(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param)
       ranking=np.array(dataSplit.cacheLists[qid].pop())
+    elif fairness_strategy == "Randomk":
+      RankingScore=np.random.uniform(0,1,qRel.shape)
+      ranking=single_ranking(RankingScore,rankListLength=rankListLength)     
+    elif fairness_strategy == "Topk":
+      RankingScore=qRel
+      ranking=single_ranking(RankingScore,rankListLength=rankListLength)    
     return ranking
