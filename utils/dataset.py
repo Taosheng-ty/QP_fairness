@@ -459,59 +459,6 @@ def get_query_aver_length(data):
                 # data.test.num_queries()+\
     return int(total_docs/total_queries)
     # print(total_queries)
-def get_docids_from_qids(qids,data_split,mask=None):
-    training_qid=[]
-    for qid in qids:
-        start,end=data_split.query_range(qid)
-        shown_id=np.arange(start,end)
-        if mask is not None:
-            mask_q=data_split.query_values_from_vector(qid,mask)
-            shown_id=shown_id[mask_q==1]
-        training_qid.append(shown_id)
-    training_qid=np.concatenate(training_qid).astype(np.int)
-    return training_qid
-
-def get_mask(data_split,cold_rng,low=5,high=10):
-    n_docs=data_split.num_docs()
-    mask=np.zeros(n_docs).astype(np.int)
-    num_queries=data_split.num_queries()
-    for query in range(num_queries):
-        mask_query=data_split.query_values_from_vector(query,mask)
-        n_mask_query=len(mask_query)
-        if n_mask_query<=low:
-            mask_query[:]=1
-        else:
-            high_mask=min(n_mask_query,high)
-            random=cold_rng.integers(low,high_mask)
-            true_mask_ind=cold_rng.choice(n_mask_query, random, replace=False)
-            mask_query[true_mask_ind]=1
-    return mask
-def update_mask(mask_query,prob=0.2,cold_rng=None):
-    n_mask_query=len(mask_query)
-    unshown=np.arange(n_mask_query)[mask_query==0]
-    cold_rng.shuffle(unshown)
-    unshown=unshown.tolist()
-    if cold_rng.random()<prob and unshown:
-        incoming_id=unshown.pop()
-        mask_query[incoming_id]=1
-        return incoming_id
-    else:
-        return None
-        # print(incoming_id,"update mask")
-def mask_items(mask_query,policy_scores_query,flag=1):
-    policy_scores_masked=np.zeros_like(policy_scores_query)
-    policy_scores_masked[:]=policy_scores_query
-    policy_scores_masked[mask_query==0]=-np.inf*flag
-    return policy_scores_masked
-
-def mask_expand_items(mask_query,policy_scores_query,flag=1):
-    """
-    This function expands policy_scores_query of size n to size of N, where mask_query is position of the n element.
-    """
-    policy_scores_masked=np.zeros(mask_query.shape)
-    policy_scores_masked[mask_query]=policy_scores_query
-    policy_scores_masked[~mask_query]=-np.inf*flag
-    return policy_scores_masked
 
 def get_data_stat(data,query_least_size=5):
     data.train.filtered_query_sizes(query_least_size)
@@ -543,39 +490,11 @@ def get_mutiple_data_statics(data_name_list=[]):
     df = pd.DataFrame(stas_list,index=data_name_list,columns=["# Queries","# Average documents","# Unique feature","# Total documents","IrrelevantRatio"])
     return df
 
-def reindex_ranklists_via_mask(ranking, mask):
-    """
-    This function reindex the docs in ranklists by remove masked indexes.
-    """
-    ori_2_masked=np.ones_like(mask, dtype=np.int32)*np.NINF
-    n_true_docs=mask.sum()
-    ori_2_masked[mask]=np.arange(n_true_docs)
-    ranking=ori_2_masked[ranking]
-    ranking=ranking.astype(np.int32)
-    return ranking
+
 
 def clip(value_list,low=0.05,high=0.95):
     result_list=[]
     for value in value_list:
         result_list.append(np.clip(value,low,high))
     return result_list
-    
-class TestStringMethods(unittest.TestCase):
-    """
-    Class used for unittest of functions in this file.
-    """
-
-    def test_reindex_ranklists_via_mask(self):
-        n=5
-        ranking=np.random.randint(1,5,(100,5))
-        mask=np.ones(n)
-        mask[0]=0
-        mask=mask==1
-        ranking_reindex=reindex_ranklists_via_mask(ranking,mask)
-        
-        self.assertTrue(np.array_equal(ranking_reindex,ranking-1), 'FOO')
-
-
-if __name__ == '__main__':
-    unittest.main()    
     

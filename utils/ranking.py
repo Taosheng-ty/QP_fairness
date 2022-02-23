@@ -61,6 +61,9 @@ def multiple_rankings(scores, rankListLength):
     rankListLength = min(n_docs, rankListLength)
     ind = np.arange(n_samples)
     rankingScore=-scores
+    if n_docs==rankListLength:
+      rankings=np.argsort(rankingScore,axis=1)
+      return rankings
     partition = np.argpartition(rankingScore, rankListLength, axis=1)[:,:rankListLength]
     sorted_partition = np.argsort(rankingScore[ind[:, None], partition], axis=1)
     rankings = partition[ind[:, None], sorted_partition]
@@ -78,23 +81,32 @@ def updateExposure(qid,dataSplit,ranking,positionBias):
     """
     qExpVector=dataSplit.query_values_from_vector(qid,dataSplit.exposure)
     qExpVector[ranking]+=positionBias
-def getQuotaFromQP(relevance_esti,obs,FutureFairExpo,positionBias):
+def getQuotaFromQP(relevance_esti,obs,FutureFairExpo,positionBias,NDCGconstraintParam=None):
     """
     This function calculate the additional quota needed for each document via qudratic optimization.
     """
+    rankLength=positionBias.shape[0]
     sum_sqaure_R=np.sum((relevance_esti)**2)
     sum_mutiply_ER=np.sum(relevance_esti*obs)
     B=obs*sum_sqaure_R-relevance_esti*sum_mutiply_ER
     n_docs=relevance_esti.shape[0]
-    A=sum_sqaure_R*np.identity(n_docs)-relevance_esti[:,None]*relevance_esti[None,:]+np.identity(n_docs)*1e-4
+    A=sum_sqaure_R*np.identity(n_docs)-relevance_esti[:,None]*relevance_esti[None,:]+np.identity(n_docs)*1e-2
     lb=np.zeros(n_docs)
     ub=np.ones(n_docs)*FutureFairExpo*positionBias[0]/positionBias.sum()
     Constant_A=np.ones(n_docs)
-    x = solve_qp(A, B, A=Constant_A, b=FutureFairExpo,lb=lb,ub=ub)
+    G=None
+    h=None
+    if NDCGconstraintParam is not None:
+      G=-relevance_esti[None,:]
+      relevance_estiSorted=-np.sort(-relevance_esti)
+      n_futureSession=FutureFairExpo//positionBias.sum()
+      h=-np.sum(relevance_estiSorted[:rankLength]*positionBias)*n_futureSession*(1-NDCGconstraintParam)
+      h=np.array([h])
+    x = solve_qp(A, B, G=G,h=h, A=Constant_A, b=FutureFairExpo,lb=lb,ub=ub)
     if x is None:
         return np.zeros(n_docs).astype(np.float)
     return x
-def getQuotaEachItem(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param):
+def getQuotaEachItemQuota(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param): 
     """
     This funciton calcultes the Quota each item should get to keep fairness.
     """
@@ -102,7 +114,14 @@ def getQuotaEachItem(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_pa
     QuotaEachItem=getQuotaFromQP(q_rel,obs,FutureFairExpo,positionBias)
     # print(QuotaEachItem,q_rel/(q_rel.sum()+1e-5)*FutureFairExpo)
     return QuotaEachItem.astype(np.float)
-
+def getQuotaEachItemNDCG(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param): 
+    """
+    This funciton calcultes the Quota each item should get to keep fairness.
+    """
+    FutureFairExpo=positionBias.sum()*n_futureSession*1
+    QuotaEachItem=getQuotaFromQP(q_rel,obs,FutureFairExpo,positionBias,NDCGconstraintParam=fairness_tradeoff_param)
+    # print(QuotaEachItem,q_rel/(q_rel.sum()+1e-5)*FutureFairExpo)
+    return QuotaEachItem.astype(np.float)
 def getExpoBackwardCum(n_futureSession,rankListLength,positionBias):
     """
     This funciton calcultes the Exposure cumulation at each position backwards.
@@ -141,33 +160,82 @@ def getVerticalRanking(q_rel,rankListLength,n_futureSession,ExpoBackwardCum,Quot
             ranking.append(item_ij)
             Expo[item_ij]+=positionBias[j]
     return rankLists
-def getFutureRanking(obs,q_rel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param):
+def getFutureRankingQuota(obs,q_rel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param):
     """
     This funciton outputs future rankists by conidering fair exposure gurantee.
     """    
-    QuotaEachItem=getQuotaEachItem(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param)
+    QuotaEachItem=getQuotaEachItemQuota(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param)
     ExpoBackwardCum=getExpoBackwardCum(n_futureSession,rankListLength,positionBias)
     rankLists=getVerticalRanking(q_rel,rankListLength,n_futureSession,ExpoBackwardCum,QuotaEachItem,positionBias)
     random.shuffle(rankLists)
     return rankLists
-def get_ranking(qid,dataSplit,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None):
+def getFutureRankingNDCG(obs,q_rel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param):
+    """
+    This funciton outputs future rankists by conidering fair exposure gurantee.
+    """    
+    QuotaEachItem=getQuotaEachItemNDCG(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param)
+    ExpoBackwardCum=getExpoBackwardCum(n_futureSession,rankListLength,positionBias)
+    rankLists=getVerticalRanking(q_rel,rankListLength,n_futureSession,ExpoBackwardCum,QuotaEachItem,positionBias)
+    random.shuffle(rankLists)
+    return rankLists
+def get_rankingFromDatasplit(qid,dataSplit,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None):
     """
     This function return the ranking.
     """
     qRel=dataSplit.query_values_from_vector(qid,dataSplit.label_vector)
     qExpVector=dataSplit.query_values_from_vector(qid,dataSplit.exposure)
-    if fairness_strategy in ["FairCo","FairCo_maxnorm",'FairCo_multip.',"FairCo_average"]:
+    cacheLists=dataSplit.cacheLists[qid]
+    ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None,cacheLists=cacheLists)
+    return ranking
+
+def get_rankingFromData(data,userFeature,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None):
+    """
+    This function return the ranking.
+    """
+    qRel=data.getEstimatedAverageRelevance(userFeature)
+    qExpVector=data.exposure
+    cacheLists=data.cacheLists
+    queryFreq=data.queryFreq
+    ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession,positionBias,cacheLists=cacheLists,queryFreq=queryFreq,data=data)
+    return ranking
+def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None,cacheLists=[],queryFreq=0,data=None):
+    if fairness_strategy in ["FairCo","FairCo_maxnorm",'FairCo_multip.',"FairCo_average","FairCo_maxnorm"]:
       Docunfairness=unfairnessDoc(qExpVector,qRel,fairness_strategy)
       RankingScore=qRel+fairness_tradeoff_param*Docunfairness
+      if data.relvance_strategy=="EstimatedAverage" and queryFreq<600:
+        RankingScore+=10*np.clip(10-data.exposure,0,np.inf)
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)
     elif fairness_strategy in ["QPfair"]:
-      if len(dataSplit.cacheLists[qid])<=0:
-        dataSplit.cacheLists[qid]=getFutureRanking(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param)
-      ranking=np.array(dataSplit.cacheLists[qid].pop())
+      if data.relvance_strategy=="EstimatedAverage" and queryFreq<600:
+        fairness_strategy="FairCo_average"
+        fairness_tradeoff_param=100
+        ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession,positionBias,cacheLists=cacheLists,data=data)
+      else: 
+        if len(cacheLists)<=0:
+          cacheLists+=getFutureRankingQuota(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param)
+        ranking=np.array(cacheLists.pop())
+    elif fairness_strategy in ["QPfairNDCG"]:
+      if data.relvance_strategy=="EstimatedAverage" and queryFreq<600:
+        fairness_strategy="FairCo_average"
+        fairness_tradeoff_param=100
+        ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession,positionBias,cacheLists=cacheLists,data=data)
+      else: 
+        if len(cacheLists)<=0:
+          cacheLists+=getFutureRankingNDCG(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param)
+        ranking=np.array(cacheLists.pop())
     elif fairness_strategy == "Randomk":
       RankingScore=np.random.uniform(0,1,qRel.shape)
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)     
     elif fairness_strategy == "Topk":
       RankingScore=qRel
-      ranking=single_ranking(RankingScore,rankListLength=rankListLength)    
+      ranking=single_ranking(RankingScore,rankListLength=rankListLength)
+    elif fairness_strategy == "Hybrid":
+      if queryFreq<600:
+        fairness_strategy="FairCo_average"
+        fairness_tradeoff_param=1000
+        ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession,positionBias,cacheLists=cacheLists)
+      else:
+        fairness_strategy="QPfair"
+        ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession,positionBias,cacheLists=cacheLists)
+    
     return ranking

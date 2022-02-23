@@ -27,4 +27,17 @@ def sample_Queryid(dataSplit,query_rng):
     Queryid = query_rng.choice(dataSplit.queriesList, size=1)[0]
     return  Queryid
 def getpositionBias(cutoff,positionBiasSeverity):
+    """
+    This funciton returns the position bias of each rank.
+    """  
     return (1/np.log2(2+np.arange(cutoff)))**positionBiasSeverity
+def generateClick(ranking,TrueRel,positionBias,RandomNumberGenerator):
+    """
+    This funciton generate clicks according to relevance and position bias.
+    """      
+    RankedRel=TrueRel[ranking]
+    rand_var = np.random.rand(len(RankedRel))
+    rand_prop = np.random.rand(len(positionBias))
+    viewed = rand_prop < positionBias
+    clicks = np.logical_and(rand_var < RankedRel, viewed)
+    return clicks
