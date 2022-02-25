@@ -237,5 +237,4 @@ def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankLi
       else:
         fairness_strategy="QPfair"
         ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession,positionBias,cacheLists=cacheLists)
-    
     return ranking
