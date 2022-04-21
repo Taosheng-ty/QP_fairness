@@ -297,16 +297,16 @@ def getdataFolder(dataset_info_path="local_dataset_info.txt",dataset_name="Movie
     
     set_info = all_info[dataset_name]
     return set_info["dataFolder"]
-def load_data(dataset_name="Movie",dataset_info_path="local_dataset_info.txt",RandomSeed=0,rerun=False,relvance_strategy=None):
+def load_data(dataset_name="Movie",dataset_info_path="local_dataset_info.txt",RandomSeed=0,rerun=False,relvance_strategy=None,NumDocMaximum=None):
     """
     load the data and build a item class
     """
     dataFolder=getdataFolder(dataset_info_path,dataset_name)
-    AverRating, groups, DataGenerator=GetData(dataFolder =dataFolder,dataset_name=dataset_name,RandomSeed=RandomSeed,rerun=rerun)
+    AverRating, groups, DataGenerator=GetData(dataFolder =dataFolder,dataset_name=dataset_name,RandomSeed=RandomSeed,rerun=rerun,NumDocMaximum=NumDocMaximum)
     ItemsRankingInstance=ItemsRankingClass(AverRating, groups, DataGenerator,relvance_strategy)
     return ItemsRankingInstance
 
-def GetData(dataFolder ="data/MovieData",dataset_name="Movie",RandomSeed=0,rerun=False):
+def GetData(dataFolder ="data/MovieData",dataset_name="Movie",RandomSeed=0,rerun=False,NumDocMaximum=None):
     """
     load the data and build a item class
     """
@@ -315,8 +315,8 @@ def GetData(dataFolder ="data/MovieData",dataset_name="Movie",RandomSeed=0,rerun
         binarize_rating(dataFolder=dataFolder,dataset_name=dataset_name,seed=RandomSeed,rerun=rerun)
     AverRating, binaryRating, user_features, groups = np.load(BinarizeddRatingPath, allow_pickle=True)
     # print(binaryRating.shape,user_features.shape,len(groups))
-    DataGenerator=sample_item(binaryRating, user_features,RandomSeed)
-    return AverRating, groups, DataGenerator
+    DataGenerator=sample_item(binaryRating[:,:NumDocMaximum], user_features,RandomSeed)
+    return AverRating[:NumDocMaximum], groups, DataGenerator
 
 class ItemsRankingClass:
     def __init__(self,AverRating,groups,DataGenerator,relvance_strategy):

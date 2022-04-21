@@ -5,7 +5,7 @@ sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
 scriptPath=os.path.dirname(os.path.abspath(__file__))
 os.chdir(scriptPath+"/..")
-path_root="localOutput/Feb142022"
+path_root="localOutput/Feb142022/"
 step=19  
 data_rename={            
             "MQ2007":"MQ2007",\

@@ -1,0 +1,1 @@
+{"progressbar": "false", "rankListLength": 10, "n_iteration": 6000, "relvance_strategy": "TrueAverage", "positionBiasSeverity": 0, "dataset_name": "News", "fairness_strategy": "Topk", "random_seed": 0, "log_dir": "./relvance_strategy_TrueAverage/positionBiasSeverity_0/dataset_name_News/fairness_strategy_Topk/random_seed_0/"}
