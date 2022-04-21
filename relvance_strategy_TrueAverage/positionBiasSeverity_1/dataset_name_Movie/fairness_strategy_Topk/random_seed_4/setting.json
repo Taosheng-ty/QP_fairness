@@ -1,1 +1,0 @@
-{"progressbar": "false", "rankListLength": 10, "n_iteration": 6000, "relvance_strategy": "TrueAverage", "positionBiasSeverity": 1, "dataset_name": "Movie", "fairness_strategy": "Topk", "random_seed": 4, "log_dir": "./relvance_strategy_TrueAverage/positionBiasSeverity_1/dataset_name_Movie/fairness_strategy_Topk/random_seed_4/"}
