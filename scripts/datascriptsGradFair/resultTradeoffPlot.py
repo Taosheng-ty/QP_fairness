@@ -83,7 +83,7 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["HQPfair_200"]=result["fairness_strategy_Hybrid"]["n_futureSession_200"]
         # result_validated["QPfair_100"]=result["fairness_strategy_QPfair"]["n_futureSession_100"]
         result_validatedScatter={}
-        result_validatedScatter["Topk"]=result["fairness_strategy_Topk"]
+        result_validatedScatter["TopK"]=result["fairness_strategy_Topk"]
         # result_validatedScatter["RandomK"]=result["fairness_strategy_Randomk"]
         result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
         result_validatedScatter["ExploreK"]=result["fairness_strategy_ExploreK"]

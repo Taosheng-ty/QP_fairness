@@ -34,9 +34,9 @@ if __name__ == '__main__':
                     help="Maximum number of items that can be displayed.",
                     default=10)
     parser.add_argument("--fairness_strategy", type=str,
-                        choices=['FairCo', 'FairCo_multip.', 'QPfair','FairCo_average',"Randomk","Topk"],
-                        default="QPfair",
-                        help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPfair','FairCo_average','Randomk','Topk']")
+                        choices=['FairCo', 'FairCo_multip.', 'QPFair','GradFair',"Randomk","Topk"],
+                        default="GradFair",
+                        help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPFair','GradFair','Randomk','Topk']")
     parser.add_argument("--fairness_tradeoff_param", type=float,
                             default=1.0,
                             help="fairness_tradeoff_param")
@@ -84,13 +84,13 @@ if __name__ == '__main__':
         if dataSplit.name !="test":
             continue 
         # get a ranking according to fairness strategy
-        ranking=rnk.get_ranking(qid,\
+        ranking=rnk.get_rankingFromDatasplit(qid,\
                                 dataSplit,\
                                 args.fairness_strategy,\
                                 args.fairness_tradeoff_param,\
                                 args.rankListLength,
                                 args.n_futureSession,
-                                positionBias)
+                                positionBias=positionBias)
         # update exposure statistics according to ranking
         rnk.updateExposure(qid,dataSplit,ranking,positionBias)
         # calculate metrics ndcg and unfairness.
