@@ -11,6 +11,7 @@ import json
 import os
 import random
 import sys
+import time
 sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
 if __name__ == '__main__':
@@ -18,8 +19,8 @@ if __name__ == '__main__':
     parser.add_argument("--log_dir", type=str,
                         default="localOutput/",
                         help="Path to result logs")
-    parser.add_argument("--dataset", type=str,
-                        default="MQ2007",
+    parser.add_argument("--dataset_name", type=str,
+                        default="MSLR-WEB10k",
                         help="Name of dataset to sample from.")
     parser.add_argument("--dataset_info_path", type=str,
                         default="LTRlocal_dataset_info.txt",
@@ -28,18 +29,33 @@ if __name__ == '__main__':
                         help="Fold number to select, modulo operator is applied to stay in range.",
                         default=1)
     parser.add_argument("--query_least_size", type=int,
-                        default=10,
+                        default=5,
                         help="query_least_size, filter out queries with number of docs less than this number.")
+    parser.add_argument("--queryMaximumLength", type=int,
+                    default=np.inf,
+                    help="the Maximum number of docs")
     parser.add_argument("--rankListLength", type=int,
                     help="Maximum number of items that can be displayed.",
-                    default=10)
+                    default=5)
     parser.add_argument("--fairness_strategy", type=str,
-                        choices=['FairCo', 'FairCo_multip.', 'QPFair','GradFair',"Randomk","Topk"],
-                        default="GradFair",
+                        choices=['FairCo', 'FairCo_multip.',"onlyFairness", 'GradFair',"Randomk","FairK",\
+                            "ExploreK","Topk","FairCo_maxnorm","QPFair","QPFair-Horiz.","ILP","LP"],
+                        default="QPFair",
                         help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPFair','GradFair','Randomk','Topk']")
     parser.add_argument("--fairness_tradeoff_param", type=float,
-                            default=1.0,
+                            default=0.5,
                             help="fairness_tradeoff_param")
+    parser.add_argument("--relvance_strategy", type=str,
+                        choices=['TrueAverage',"NNmodel","EstimatedAverage"],
+                        default="EstimatedAverage",
+                        help="relvance_strategy, available choice is ['TrueAverage', 'NNmodel.', 'EstimatedAverage']")
+    parser.add_argument("--exploration_strategy", type=str,
+                        choices=['MarginalUncertainty',None],
+                        default='MarginalUncertainty',
+                        help="exploration_strategy, available choice is ['MarginalUncertainty', None]")
+    parser.add_argument("--exploration_tradeoff_param", type=float,
+                            default=5,
+                            help="exploration_tradeoff_param")
     parser.add_argument("--random_seed", type=int,
                     default=0,
                     help="random seed for reproduction")
@@ -47,55 +63,62 @@ if __name__ == '__main__':
                     help="Severity of positional bias",
                     default=1)
     parser.add_argument("--n_iteration", type=int,
-                    default=10**4,
+                    default=4*10**6,
                     help="how many iteractions to simulate")
     parser.add_argument("--n_futureSession", type=int,
-                    default=20,
-                    help="how many future session we want consider in advance, only works if we use QPfair strategy.")
+                    default=100,
+                    help="how many future session we want consider in advance, only works if we use QPFair strategy.")
     parser.add_argument("--progressbar",  type=str2bool, nargs='?',
                     const=True, default=True,
                     help="use progressbar or not.")
     args = parser.parse_args()
     # args = parser.parse_args(args=[]) # for debug
     # load the data and filter out queries with number of documents less than query_least_size.
-    data = dataset.get_data(args.dataset,
+    argsDict=vars(args)
+    data = dataset.get_data(args.dataset_name,
                   args.dataset_info_path,
                   args.fold_id,
-                  args.query_least_size)
+                  args.query_least_size,
+                  args.queryMaximumLength,
+                  relvance_strategy=args.relvance_strategy,\
+                  voidFeature=True)
     # begin simulation
     Logging=results_org.getLogging()
     positionBias=sim.getpositionBias(args.rankListLength,args.positionBiasSeverity) 
-    NDCGcutoffs=[i for i in [1,3,5,10,20] if i<=args.rankListLength]
+    argsDict["positionBias"]=positionBias
+    NDCGcutoffs=[i for i in [1,2,3,4,5,10,20] if i<=args.rankListLength]
     assert args.rankListLength>=args.query_least_size, print("For simplicity, the ranked list length should be greater than doc length")
     queryRndSeed=np.random.default_rng(args.random_seed) 
     random.seed(args.random_seed)
+    clickRNG=np.random.default_rng(args.random_seed) 
     OutputDict=defaultdict(list)
     NDCGDict=defaultdict(list)
     evalIterations=np.linspace(0, args.n_iteration-1, num=21,endpoint=True).astype(np.int32)[1:]
     iterationsGenerator=progressbar(range(args.n_iteration)) if args.progressbar else range(args.n_iteration)
+    start_time = time.time()
+    n_testCounter=0
     for iteration in iterationsGenerator:
         # sample data split and a query
-        qid,dataSplit=sim.sample_queryFromdata(data,queryRndSeed)
+        qid,dataSplit=sim.sample_queryFromdata(data,queryRndSeed,only_test=True)
         if iteration in evalIterations:
             Logging.info("current iteration"+str(iteration))
             OutputDict["iterations"].append(iteration)
+            OutputDict["time"].append(time.time()-start_time)
+            OutputDict["testIter"].append(n_testCounter)
             evl.outputNDCG(NDCGDict,OutputDict)
-            evl.outputFairness(data,OutputDict)
+            evl.outputFairnessDatasplit(data,OutputDict)
         if dataSplit.name !="test":
             continue 
+        n_testCounter+=1
         # get a ranking according to fairness strategy
         ranking=rnk.get_rankingFromDatasplit(qid,\
                                 dataSplit,\
-                                args.fairness_strategy,\
-                                args.fairness_tradeoff_param,\
-                                args.rankListLength,
-                                args.n_futureSession,
-                                positionBias=positionBias)
+                                **argsDict)
         # update exposure statistics according to ranking
-        rnk.updateExposure(qid,dataSplit,ranking,positionBias)
+        clicks=rnk.simClickForDatasplit(qid,dataSplit,ranking,positionBias,clickRNG)        
+        dataSplit.updateStatistics(qid,clicks,ranking,positionBias)
         # calculate metrics ndcg and unfairness.
-        evl.Update_NDCG_multipleCutoffs(ranking,qid,dataSplit,positionBias,NDCGcutoffs,NDCGDict)
-
+        evl.Update_NDCG_multipleCutoffsDatasplit(ranking,qid,dataSplit,positionBias,NDCGcutoffs,NDCGDict)
     #write the results.
     os.makedirs(args.log_dir,exist_ok=True)
     logPath=args.log_dir+"/result.jjson"

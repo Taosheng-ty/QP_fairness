@@ -5,24 +5,22 @@ sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
 import config
 import matplotlib.pyplot as plt 
+import matplotlib
+font = {'family' : 'normal',
+        'size'   : 12}
+
+matplotlib.rc('font', **font)
 # import BatchExpLaunch.s as tools
 scriptPath=os.path.dirname(os.path.abspath(__file__))
 os.chdir(scriptPath+"/../..")
-scale.register_scale(config.Mylog2f)
-step=19  
-data_rename={            
-            "Movie":"Movie",\
-            # "News":"News",\
-            # "MSLR-WEB30k":"MSLR-WEB30k",\
-            # "MSLR-WEB10k":"MSLR-WEB10k",\
-            # "Webscope_C14_Set1":"Webscope_C14_Set1",\
-            # "istella-s":"istella-s"
-}
-metric_name=['NDCG_1_aver','NDCG_3_aver','NDCG_5_aver']
+
+
+metric_name=['test_NDCG_1_aver','test_NDCG_3_aver','test_NDCG_5_aver']
+# metric_name=['test_NDCG_1_cumu','test_NDCG_3_cumu','test_NDCG_5_cumu']
 x=[1,3,5]
-metric_name_dict={"discounted_sum_test_ndcg":"Cum-NDCG","test_fairness":"bfairness","average_sum_test_ndcg":"average_cum_ndcg",\
-    'f1_test_rel_fair':'crf-f1',"neg_test_exposure_disparity_not_divide_qfreq":"cnegdisparity",\
-        'test_exposure_disparity_not_divide_qfreq':"Disparity"}
+
+metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
+    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5",}
 positionBiasSeverities=[
     # "positionBiasSeverity_0",
     "positionBiasSeverity_1",
@@ -33,7 +31,23 @@ path_root="localOutput/Feb192022DataTrueAver/"
 # path_root="localOutput/Feb192022DataEstimatedAverage/"
 # path_root="localOutput/Feb222022Data/relvance_strategy_EstimatedAverage"
 path_root="localOutput/Feb222022Data/relvance_strategy_TrueAverage"
-path_root="localOutput/Mar292022Data20Docs/relvance_strategy_TrueAverage"
+path_root="localOutput/Apr252022LTR_more/relvance_strategy_TrueAverage"
+path_root="localOutput/QPFairLTR/relvance_strategy_TrueAverage"
+path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
+path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
+
+step=19  
+data_rename={            
+            # "Movie":"Movie",\
+            # "News":"News",\
+            # "MSLR-WEB30k":"MSLR-WEB30k",\
+            # "MSLR-WEB10k":"MSLR10k",\
+            # "Webscope_C14_Set1":"Webscope_C14_Set1",\
+            # "istella-s":"istella-s"，
+            "MQ2008":"MQ2008",
+            # "MQ2007":"MQ2007",
+            # "istella-s":"ist",
+}
 # path_root="localOutput/Mar292022Data20Docs/relvance_strategy_EstimatedAverage"
 for positionBiasSeverity in positionBiasSeverities:
     
@@ -54,14 +68,16 @@ for positionBiasSeverity in positionBiasSeverities:
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
-        result_validated["LP"]=result["fairness_strategy_LP"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
-        result_validated["GradFair(Ours)"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_0.0"]
-
+        result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+        # result_validated["GradFair(Ours)"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+        result_validated["QPFair"]=result["fairness_strategy_QPFair"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"]
+        result_validated["QPFair-Horiz."]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"] 
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_10"]
-        result_validated["Topk"]=result["fairness_strategy_Topk"]
-        # result_validated["RandomK"]=result["fairness_strategy_Randomk"]
-        result_validated["FairK(Ours)"]=result["fairness_strategy_FairK"]
-        result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
+        result_validated["TopK"]=result["fairness_strategy_Topk"]
+        result_validated["RandomK"]=result["fairness_strategy_Randomk"]
+
+        # result_validated["FairK(Ours)"]=result["fairness_strategy_FairK"]
+        # result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
         # result_validated["QPfairNDCG_500"]=result["fairness_strategy_QPfairNDCG"]["n_futureSession_500"]['fairness_tradeoff_param_1.0']
         # result_validated["QPfairNDCG_500Hori"]=result["fairness_strategy_QPfairNDCGHorizontal"]["n_futureSession_500"]['fairness_tradeoff_param_1.0']       
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]["fairness_tradeoff_param_1000"]
@@ -91,10 +107,11 @@ for positionBiasSeverity in positionBiasSeverities:
         ax.set_xticks(x)
         ax.set_xlabel("Cutoff")
         ax.set_ylabel("NDCG")
-        ax.set_yscale("mylog2f")
+        # ax.set_yscale("log")
+        
         # ax.legend(bbox_to_anchor=(1.1, 1.05))
         results_org.reorderLegend(config.desiredGradFair,ax)
         # ax.legend()
         os.makedirs(OutputPath, exist_ok=True)
-        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"NDCGcutoff.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"NDCGcutoffaver.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
         plt.close(fig)

@@ -25,7 +25,8 @@ def get_dataset_from_json_info(
                 read_from_pickle = True,
                 feature_normalization = True,
                 purge_test_set = True,
-                shared_resource = False):
+                shared_resource = False,
+                relvance_strategy=None):
   with open(info_path) as f:
     all_info = json.load(f)
   assert dataset_name in all_info, 'Dataset: %s not found in info file: %s' % (dataset_name, all_info.keys())
@@ -85,24 +86,55 @@ class DataSet(object):
     
   def get_data_folds(self):
     return [DataFold(self, i, path) for i, path in enumerate(self.data_paths)]
+class decoms:
+  def __init__(self):
+    self.decomp=None
+
 
 class DataFoldSplit(object):
-  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector,queryLeastLength=0):
+  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector,queryLeastLength=0,relvance_strategy=None):
     self.datafold = datafold
     self.name = name
     self.doclist_ranges = doclist_ranges
     self.feature_matrix = feature_matrix
     self.label_vector = label_vector
     self.queriesList=self.filtered_query_sizes(queryLeastLength)
-    self.exposure=np.zeros_like(label_vector).astype(np.float32)
+    self.exposure=np.zeros_like(label_vector).astype(np.float64)
     self.query_freq=np.zeros(self.num_queries_orig())
     self.cacheLists=defaultdict(list)
+    self.docFreq=np.zeros_like(label_vector)
+    self.weightedClicksAver=np.zeros_like(label_vector).astype(np.float64)
+    self.ClickSum=np.zeros_like(label_vector).astype(np.float64)
+    self.relvance_strategy=relvance_strategy
+    self.decomps=defaultdict(decoms)
+  def set_relvance_strategy(self,relvance_strategy):
+    self.relvance_strategy=relvance_strategy
+  def voidFeature(self):
+    self.feature_matrix=np.zeros(1)
+  def updateStatistics(self,qid,clicks,ranking,positionBias):
+    self.query_freq[qid]+=1
+    q_docFreq=self.query_values_from_vector(qid,self.docFreq)
+    exposure=self.query_values_from_vector(qid,self.exposure)
+    ClickSum=self.query_values_from_vector(qid,self.ClickSum)
+    weightedClicksAver=self.query_values_from_vector(qid,self.weightedClicksAver)
+    np.add.at(q_docFreq,ranking,1)
+    np.add.at(exposure,ranking,positionBias)
+    np.add.at(ClickSum,ranking,clicks)
+    # np.add.at(self.weightClicksSum,ranking,clicks/positionBias)
+    weightedClicksAver[:]=ClickSum/(np.clip(exposure,1e-5,np.inf))
+  def getEstimatedAverageRelevance(self,userFeature=None):
+      if self.relvance_strategy=="TrueAverage":
+          return self.label_vector
+      elif self.relvance_strategy=="EstimatedAverage":
+          return self.weightedClicksAver
+      else:
+          raise 
   def num_queries_orig(self):
     return self.doclist_ranges.shape[0] -1
   def num_queries(self):
     return len(self.queriesList)
   def num_docs(self):
-    return self.feature_matrix.shape[0]
+    return self.label_vector.shape[0]
 
   def query_values_from_vector(self, qid, vector):
     s_i, e_i = self.query_range(qid)
@@ -132,12 +164,10 @@ class DataFoldSplit(object):
   def query_sizes(self):
     return (self.doclist_ranges[1:] - self.doclist_ranges[:-1])
 
-  def filtered_query_sizes(self,queryLeastLength):
-    selected_query=np.where(self.query_sizes()>queryLeastLength)[0]
-    # print("filterd and removed ",self.num_queries_orig()-selected_query.shape[0],"in",
-    #       self.num_queries_orig(),"ratio is",
-    #       str(1-selected_query.shape[0]/self.num_queries_orig()))
+  def filtered_query_sizes(self,queryLeastLength,queryMaximumLength=np.inf):
+    selected_query=np.where(np.logical_and(self.query_sizes()>queryLeastLength , self.query_sizes()<queryMaximumLength) )[0]
     self.queriesList=selected_query
+    print("number of query in data split",len(selected_query),flush=True)
     return self.queriesList
 
   def max_query_size(self):
@@ -436,18 +466,29 @@ class DataFold(object):
                                test_label_vector)
     self._data_ready = True
 
-
-def get_data(dataset,dataset_info_path,fold_id,query_least_size=0):
+def expRelConvert(label,epsilon=0.1):
+  """
+  This function converts relevance degree from integer number  [0,1,2,...,], to fraction.
+  """
+  maxLabel=np.max(label)
+  label=epsilon+(1-epsilon)*(2**label-1)/(2**maxLabel-1)
+  return label
+def get_data(dataset,dataset_info_path,fold_id,query_least_size=0,queryMaximumLength=np.inf,relvance_strategy="TrueAverage",voidFeature=True,RelConvertfcn=expRelConvert):
     data = get_dataset_from_json_info(
                   dataset,
                   dataset_info_path,
                   shared_resource = False,
+                  relvance_strategy=relvance_strategy
                 )
     fold_id = (fold_id-1)%data.num_folds()
     data = data.get_data_folds()[fold_id]
     data.read_data()
     for data_split in [data.test,data.train,data.validation]:
-      data_split.filtered_query_sizes(query_least_size)
+      data_split.filtered_query_sizes(query_least_size,queryMaximumLength)
+      data_split.set_relvance_strategy(relvance_strategy)
+      if voidFeature:
+        data_split.voidFeature()
+      data_split.label_vector=RelConvertfcn(data_split.label_vector)
     return data
 def get_query_aver_length(data):
     total_docs=data.train.num_docs()+\

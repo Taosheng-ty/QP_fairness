@@ -294,8 +294,9 @@ def getdataFolder(dataset_info_path="local_dataset_info.txt",dataset_name="Movie
     """
     with open(dataset_info_path) as f:
         all_info = json.load(f)
-    
+    print(all_info,dataset_name)
     set_info = all_info[dataset_name]
+    
     return set_info["dataFolder"]
 def load_data(dataset_name="Movie",dataset_info_path="local_dataset_info.txt",RandomSeed=0,rerun=False,relvance_strategy=None,NumDocMaximum=None):
     """

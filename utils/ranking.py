@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import scipy
 import scipy.optimize as opt
 import utils.birkhoff as birkhoff
+import utils.simulation as sim
 def unfairnessDoc(obs,relevance_esti_orig,fairness_strategy,**kwargs):
 
     """
@@ -300,6 +301,8 @@ def getQuotaFromQP(relevance_esti,obs,FutureFairExpo,positionBias,\
     """
     This function calculate the additional quota needed for each document via qudratic optimization.
     """
+#     print(relevance_esti.dtype,obs.dtype,FutureFairExpo.dtype,positionBias.dtype)
+    relevance_esti=np.clip(relevance_esti,1e-4,np.inf)
     rankLength=positionBias.shape[0]
     sum_sqaure_R=np.sum((relevance_esti)**2)
     sum_mutiply_ER=np.sum(relevance_esti*obs)
@@ -317,6 +320,7 @@ def getQuotaFromQP(relevance_esti,obs,FutureFairExpo,positionBias,\
       n_futureSession=FutureFairExpo//positionBias.sum()
       h=-np.sum(relevance_estiSorted[:rankLength]*positionBias)*n_futureSession*(1-NDCGconstraintParam)
       h=np.array([h])
+    # print(exploration_tradeoff_param)
     if exploration_tradeoff_param<=0:
       x = solve_qp(A, B, G=G,h=h, A=Constant_A, b=FutureFairExpo,lb=lb,ub=ub)
     else:
@@ -325,15 +329,18 @@ def getQuotaFromQP(relevance_esti,obs,FutureFairExpo,positionBias,\
       G=extendDecisionVar(G,0)
       Constant_A=extendDecisionVar(Constant_A,0)
       lb=extendDecisionVar(lb,0)
-      ub=extendDecisionVar(ub,np.inf)
+      ub=extendDecisionVar(ub,1e5)
       hexp=-(exploration_tradeoff_param-obs)
       Gexp=-np.concatenate([np.eye(n_docs),np.eye(n_docs)],axis=1)
       G=np.concatenate([G,Gexp],axis=0)
       h=np.concatenate([h,hexp],axis=0)
-      x = solve_qp(A, B, G=G,h=h, A=Constant_A, b=FutureFairExpo,lb=lb,ub=ub)[:n_docs]
+      # print(A.shape,B.shape)
+      x = solve_qp(A, B, G=G,h=h, A=Constant_A, b=FutureFairExpo,lb=lb,ub=ub)
     if x is None:
-        return np.zeros(n_docs).astype(np.float)
-    return x
+#       print(relevance_esti,obs,FutureFairExpo,positionBias,NDCGconstraintParam,exploration_tradeoff_param)
+      print("no solution")
+      return FutureFairExpo/(relevance_esti.sum()+1e-10)*relevance_esti
+    return x[:n_docs]
 
 def getQuotaEachItemQuota(obs,q_rel,positionBias,n_futureSession,fairness_tradeoff_param): 
     """
@@ -467,20 +474,25 @@ def getFutureRankingNDCGHorizontal(obs,q_rel,positionBias,n_futureSession,rankLi
     rankLists=getHorizontalRanking(q_rel,rankListLength,n_futureSession,QuotaEachItem,positionBias)
     random.shuffle(rankLists)
     return rankLists
-def get_rankingFromDatasplit(qid,dataSplit,fairness_strategy,fairness_tradeoff_param,rankListLength,n_futureSession=None,positionBias=None,exploration_tradeoff_param=0):
+def get_rankingFromDatasplit(qid,dataSplit,**kwargs):
     """
     This function return the ranking.
     """
-    qRel=dataSplit.query_values_from_vector(qid,dataSplit.label_vector)
+    Rel=dataSplit.getEstimatedAverageRelevance()
+    qRel=dataSplit.query_values_from_vector(qid,Rel)
     qExpVector=dataSplit.query_values_from_vector(qid,dataSplit.exposure)
     cacheLists=dataSplit.cacheLists[qid]
-    ranking=get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,\
-      rankListLength=rankListLength,n_futureSession=None,\
-        positionBias=positionBias,cacheLists=cacheLists,\
-          exploration_tradeoff_param=exploration_tradeoff_param,\
-            exploration_strategy=None)
+    kwargs["qid"]=qid
+    ranking=get_ranking(qRel,qExpVector,cacheLists=cacheLists,data=dataSplit.decomps[qid],\
+      queryFreq=dataSplit.query_freq[qid],**kwargs)
     return ranking
-
+def simClickForDatasplit(qid,dataSplit,ranking,positionBias,clickRNG,**kwargs):
+    """
+    This function return the ranking.
+    """
+    TrueRel=dataSplit.query_values_from_vector(qid,dataSplit.label_vector)
+    clicks=sim.generateClick(ranking,TrueRel,positionBias,clickRNG)
+    return clicks
 def get_rankingFromData(data,userFeature,positionBias,**kwargs):
     """
     This function return the ranking.
@@ -497,7 +509,7 @@ def uncertaintyDoc(qExpVector,exploration_strategy):
     This function return the marginal uncertainty.
     """  
     if exploration_strategy=="MarginalUncertainty":
-      return 1/np.clip(qExpVector**2,1,np.inf)
+      return 1/np.clip(qExpVector**2,0.1,np.inf)
     elif exploration_strategy==None:
       return np.zeros_like(qExpVector)
 

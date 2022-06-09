@@ -1,12 +1,14 @@
 import numpy as np
-def sample_queryFromdata(data,query_rng):
+def sample_queryFromdata(data,query_rng,only_test=False):
     """
     This funciton samples a query from all three splits, data.train, data.validation, and data.test.
     """
-    dataSplits=[data.train,data.validation,data.test]
+    if only_test:
+        dataSplits=[data.test]
+    else:
+        dataSplits=[data.train,data.validation,data.test]
     splitId=sample_splitId(dataSplits,query_rng)
     Queryid=sample_Queryid(dataSplits[splitId],query_rng)
-    dataSplits[splitId].query_freq[Queryid]+=1
     return Queryid,dataSplits[splitId]
 
 def sample_splitId(dataSplits,query_rng):
@@ -17,7 +19,7 @@ def sample_splitId(dataSplits,query_rng):
     total_n_query=sum(n_queries)
     query_ratio = np.array(n_queries)/total_n_query
 
-    splitId = query_rng.choice(3, size=1,
+    splitId = query_rng.choice(len(dataSplits), size=1,
                                      p=query_ratio)
     return  int(splitId)
 def sample_Queryid(dataSplit,query_rng):

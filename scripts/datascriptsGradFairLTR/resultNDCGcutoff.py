@@ -5,21 +5,39 @@ sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
 import config
 import matplotlib.pyplot as plt 
+import matplotlib
+font = {'family' : 'normal',
+        'size'   : 12}
+from matplotlib import scale
+
+matplotlib.rc('font', **font)
 # import BatchExpLaunch.s as tools
 scriptPath=os.path.dirname(os.path.abspath(__file__))
 os.chdir(scriptPath+"/../..")
-scale.register_scale(config.Mylog2f)
+
 step=19  
 data_rename={            
-            "Movie":"Movie",\
+            # "Movie":"Movie",\
             # "News":"News",\
             # "MSLR-WEB30k":"MSLR-WEB30k",\
             # "MSLR-WEB10k":"MSLR-WEB10k",\
             # "Webscope_C14_Set1":"Webscope_C14_Set1",\
-            # "istella-s":"istella-s"
+            # "istella-s":"istella-s"，
+            "MQ2008":"MQ2008",
+            # "MQ2007":"MQ2007",
+            "istella-s":"ist"
 }
-metric_name=['NDCG_1_aver','NDCG_3_aver','NDCG_5_aver']
-x=[1,3,5]
+MQfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
+Isfunctions=results_org.setScaleFunction(a=-10,b=1,low=True)
+scaleFcn={"MQ2008":MQfunctions,"ist":Isfunctions}
+xMQfunctions=results_org.setScaleFunction(a=0,b=1,low=True)
+# xIsfunctions=results_org.setScaleFunction(a=10,b=1,low=True)
+xIsfunctions=[lambda x:x, lambda x:x]
+xscaleFcn={"MQ2008":xMQfunctions,"ist":xIsfunctions}
+
+metric_name=['test_NDCG_1_aver','test_NDCG_3_aver','test_NDCG_5_aver']
+metric_name=['test_NDCG_1_cumu','test_NDCG_2_cumu','test_NDCG_3_cumu','test_NDCG_4_cumu','test_NDCG_5_cumu']
+x=[1,2,3,4,5]
 metric_name_dict={"discounted_sum_test_ndcg":"Cum-NDCG","test_fairness":"bfairness","average_sum_test_ndcg":"average_cum_ndcg",\
     'f1_test_rel_fair':'crf-f1',"neg_test_exposure_disparity_not_divide_qfreq":"cnegdisparity",\
         'test_exposure_disparity_not_divide_qfreq':"Disparity"}
@@ -33,13 +51,16 @@ path_root="localOutput/Feb192022DataTrueAver/"
 # path_root="localOutput/Feb192022DataEstimatedAverage/"
 # path_root="localOutput/Feb222022Data/relvance_strategy_EstimatedAverage"
 path_root="localOutput/Feb222022Data/relvance_strategy_TrueAverage"
-path_root="localOutput/Mar292022Data20Docs/relvance_strategy_TrueAverage"
+path_root="localOutput/Apr252022LTR_more/relvance_strategy_TrueAverage"
+path_root="localOutput/Apr262022LTR/relvance_strategy_TrueAverage"
+# path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
+
 # path_root="localOutput/Mar292022Data20Docs/relvance_strategy_EstimatedAverage"
 for positionBiasSeverity in positionBiasSeverities:
     
-    OutputPath=os.path.join(path_root,"result")
+    OutputPath=os.path.join(path_root,"result","MCFair")
     for datasets,data_name_cur in data_rename.items():
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(6.4,2.4))
         result_list=[]  
         result_validated={}
         datasets="dataset_name_"+datasets
@@ -53,15 +74,18 @@ for positionBiasSeverity in positionBiasSeverities:
         # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
-        result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
-        result_validated["LP"]=result["fairness_strategy_LP"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
-        result_validated["GradFair(Ours)"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_0.0"]
+
+
 
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_10"]
-        result_validated["Topk"]=result["fairness_strategy_Topk"]
+        result_validated["TopK"]=result["fairness_strategy_Topk"]
         # result_validated["RandomK"]=result["fairness_strategy_Randomk"]
         result_validated["FairK(Ours)"]=result["fairness_strategy_FairK"]
         result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
+        result_validated["MCFair(Ours)"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+        if "fairness_strategy_LP" in result:
+            result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+            result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         # result_validated["QPfairNDCG_500"]=result["fairness_strategy_QPfairNDCG"]["n_futureSession_500"]['fairness_tradeoff_param_1.0']
         # result_validated["QPfairNDCG_500Hori"]=result["fairness_strategy_QPfairNDCGHorizontal"]["n_futureSession_500"]['fairness_tradeoff_param_1.0']       
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]["fairness_tradeoff_param_1000"]
@@ -78,6 +102,7 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["HQPfair_2"]=result["fairness_strategy_Hybrid"]["n_futureSession_2"]['fairness_tradeoff_param_1.0']
         # result_validated["HQPfair_20"]=result["fairness_strategy_Hybrid"]["n_futureSession_20"]['fairness_tradeoff_param_1.0']
         # result_validated["HQPfair_100"]=result["fairness_strategy_Hybrid"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']
+        result_validated=results_org.reorderDict(result_validated,config.desiredGradFair)
         for metrics in metric_name:
             result_vali_metrics=results_org.extract_step_metric(result_validated,metrics,step,metrics)
             result_list=result_list+result_vali_metrics
@@ -86,15 +111,20 @@ for positionBiasSeverity in positionBiasSeverities:
         result_dfram=result_dfram.pivot(index='method', columns='metrics', values='metricsValue')
         result_dfram=result_dfram.reindex(columns=metric_name)
         
-        result_dict={index:[x,result_dfram.loc[index].to_list()] for index in result_dfram.index}
-        results_org.plot(result_dict,ax=ax)
+        result_dict={index:[x,result_dfram.loc[index].to_list()] for index in result_validated.keys()}
+        results_org.plot(result_dict,ax=ax,\
+                                        desiredGradFairColorDict=config.desiredGradFairColor)
         ax.set_xticks(x)
         ax.set_xlabel("Cutoff")
-        ax.set_ylabel("NDCG")
-        ax.set_yscale("mylog2f")
+        ax.set_ylabel("cNDCG")
+        # ax.set_yscale("log")
+        ax.set_yscale("function",functions=scaleFcn[data_name_cur])
+        ax.set_xscale("function",functions=xscaleFcn[data_name_cur])
         # ax.legend(bbox_to_anchor=(1.1, 1.05))
-        results_org.reorderLegend(config.desiredGradFair,ax)
-        # ax.legend()
+        legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,ax,returnHandles=True)
+        # legend.nrow=2
+        ax.legend(handles,labels,bbox_to_anchor=(1.04,1), loc="upper left")
+        plt.locator_params(axis='x', nbins=5)
         os.makedirs(OutputPath, exist_ok=True)
-        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"NDCGcutoff.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"NDCGcutoffcumu.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
         plt.close(fig)
