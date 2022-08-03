@@ -63,6 +63,7 @@ for positionBiasSeverity in positionBiasSeverities:
             # result_validated["Randomk"]=result["fairness_strategy_Randomk"]
             result_validated["FairK"]=result["fairness_strategy_FairK"]
             result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
+            result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_10"]["exploration_tradeoff_param_0.0"]
             result_validated["MCFair"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_10"]["exploration_tradeoff_param_10"]
             # result_validated["FairCo_explore-1"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]

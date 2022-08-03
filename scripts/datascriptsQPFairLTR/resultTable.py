@@ -1,6 +1,7 @@
 import sys
 import os
 import pandas as pd
+import matplotlib.pyplot as plt 
 sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
 # import BatchExpLaunch.s as tools
@@ -22,10 +23,11 @@ data_rename={
             # "istella-s":"istella-s"
             "MQ2008":"MQ2008",
             # "MQ2007":"MQ2007",
-            # "istella-s":"ist"
+#             "istella-s":"ist"
 }
 metric_name=['test_NDCG_1_aver','test_NDCG_3_aver','test_NDCG_5_aver',"test_disparity","time1kLists"]
 metric_name=['test_NDCG_1_cumu','test_NDCG_3_cumu','test_NDCG_5_cumu',"test_disparity","time1kLists"]
+metric_name=["test_disparity","time1kLists"]
 metric_name_dict={"discounted_sum_test_ndcg":"Cum-NDCG","test_fairness":"bfairness","average_sum_test_ndcg":"average_cum_ndcg",\
     'f1_test_rel_fair':'crf-f1',"neg_test_exposure_disparity_not_divide_qfreq":"cnegdisparity",\
         'test_exposure_disparity_not_divide_qfreq':"Disparity"}
@@ -43,6 +45,8 @@ path_root="localOutput/Apr252022LTR_small/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
+# path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
+# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
 # path_root="localOutput/Apr252022LTR_more/relvance_strategy_EstimatedAverage"
 
 # path_root="localOutput/Mar292022Data20Docs/relvance_strategy_EstimatedAverage"
@@ -64,9 +68,9 @@ for positionBiasSeverity in positionBiasSeverities:
             # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
             result_validated["Topk"]=result["fairness_strategy_Topk"]
             result_validated["Randomk"]=result["fairness_strategy_Randomk"]
-            # result_validated["FairK"]=result["fairness_strategy_FairK"]
-            # result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
-            result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+            result_validated["FairK"]=result["fairness_strategy_FairK"]
+#             result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
+            result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_0.0"]
             # result_validated["GradFair"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             # result_validated["FairCo_explore-1"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]
             # result_validated["FairCo_average_explore-1"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]
@@ -85,7 +89,7 @@ for positionBiasSeverity in positionBiasSeverities:
             # result_validated["LP-1.0"]=result["fairness_strategy_LP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             # result_validated["LP-10"]=result["fairness_strategy_LP"]["fairness_tradeoff_param_10"]["exploration_tradeoff_param_0.0"]
 
-            result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+            
             # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]["fairness_tradeoff_param_1000"]
             # result_validated["QPfair_2"]=result["fairness_strategy_QPfair"]["n_futureSession_2"]['fairness_tradeoff_param_1.0']
             # result_validated["QPfair_5"]=result["fairness_strategy_QPfair"]["n_futureSession_5"]['fairness_tradeoff_param_1.0']
@@ -95,8 +99,9 @@ for positionBiasSeverity in positionBiasSeverities:
 
             # result_validated["QPfair_2"]=result["fairness_strategy_QPfair"]["n_futureSession_2"]['fairness_tradeoff_param_1.0']
             # result_validated["QPfair_5"]=result["fairness_strategy_QPfair"]["n_futureSession_5"]['fairness_tradeoff_param_1.0']
-            result_validated["QPFair"]=result["fairness_strategy_QPFair"]["n_futureSession_200"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"]
-            result_validated["QPFair-Horiz."]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_200"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"] 
+            result_validated["QPFair"]=result["fairness_strategy_QPFair"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"]
+            result_validated["QPFair-Horiz."]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"] 
+            result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             # result_validated["QPfair_100"]=result["fairness_strategy_QPfair"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']
             # result_validated["QPfair_200"]=result["fairness_strategy_QPfair"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']
             # result_validated["HQPfair_2"]=result["fairness_strategy_Hybrid"]["n_futureSession_2"]['fairness_tradeoff_param_1.0']
@@ -117,3 +122,18 @@ for positionBiasSeverity in positionBiasSeverities:
     mean=results_org.to_mean(result_dfram)
     output_path=os.path.join(OutputPath,positionBiasSeverity+"mean.csv")
     mean.to_csv(output_path)
+    for datasets,data_name_cur in data_rename.items():
+        fig = plt.figure(figsize = (6, 3))
+        methods=mean.index.tolist()
+        if data_name_cur+"test_disparity" not in mean:
+            continue
+        unfairness=mean[data_name_cur+"test_disparity"].astype(float).tolist()
+        # creating the bar plot
+        plt.bar(methods, unfairness, 
+                width = 0.4)
+        plt.yscale("log")
+        plt.xlabel("Methods")
+        plt.ylabel("Unfairness")
+        # plt.title("Students enrolled in different courses")
+        fig.savefig(os.path.join(OutputPath,datasets+"FairnessCapacity.pdf"), dpi=300, bbox_inches = 'tight', pad_inches = 0.05)
+        plt.close(fig)

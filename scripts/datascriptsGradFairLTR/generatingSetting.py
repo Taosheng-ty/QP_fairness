@@ -29,6 +29,7 @@ settings_base={
 # root_path="localOutput/Feb182022Data/"
 positionBiasSeverity=[1]
 root_path="localOutput/Apr262022LTR/"
+# root_path="localOutput/MCFairAug02-2022LTR/"
 desired_order_list=["relvance_strategy",'positionBiasSeverity',"dataset_name","fairness_strategy","n_futureSession","fairness_tradeoff_param","exploration_tradeoff_param","random_seed"]
 
 
@@ -40,7 +41,9 @@ list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positi
               "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
 
-
+list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
+write_setting(datasets,list_settings,settings_base)
 ##write setting.json for Topk and Randomk
 
 list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['Topk','Randomk',"FairK","ExploreK"],"random_seed":[0,1,2,3,4]}
@@ -79,6 +82,10 @@ write_setting(datasets,list_settings,settings_base)
 
 list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["onlyFairness"],"fairness_tradeoff_param":[1],\
                "exploration_tradeoff_param":[0.0,0.1,0.5,1,5,10,20,100,200,1000],"random_seed":[0,1,2,3,4]}
+write_setting(datasets,list_settings,settings_base)
+
+list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
 
 ##write setting.json for Topk and Randomk

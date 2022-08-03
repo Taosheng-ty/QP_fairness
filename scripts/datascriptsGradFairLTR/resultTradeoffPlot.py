@@ -90,6 +90,7 @@ for positionBiasSeverity in positionBiasSeverities:
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]
             result_validated["ILP"]=result["fairness_strategy_ILP"]
         result_validated["MCFair(Ours)"]=result["fairness_strategy_GradFair"]
+        result_validated["MMF"]=result["fairness_strategy_MMF"]
         for method in result_validated:
             result_validated[method]=results_org.getGrandchildNode(result_validated[method],"exploration_tradeoff_param_0.0")
         result_validated=results_org.reorderDict(result_validated,config.desiredGradFair)

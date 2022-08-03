@@ -2,6 +2,7 @@ import sys
 import os
 import pandas as pd
 import matplotlib.pyplot as plt 
+import matplotlib.ticker as mticker
 import matplotlib
 font = {'family' : 'normal',
         'size'   : 12}
@@ -24,12 +25,14 @@ path_root="localOutput/Mar292022Data20Docs/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTR/relvance_strategy_EstimatedAverage"
 path_root="localOutput/QPFairLTRistella/relvance_strategy_EstimatedAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_EstimatedAverage"
+path_root="localOutput/July3QPFairLTR/relvance_strategy_EstimatedAverage"
+# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_EstimatedAverage"
 step=19  
 data_rename={            
             # "Movie":"Movie",\
             # "News":"News",\
             # "MSLR-WEB30k":"MSLR-WEB30k",\
-            # "MSLR-WEB10k":"MSLR10k",\
+            "MSLR-WEB10k":"MSLR10k",\
             # "Webscope_C14_Set1":"Webscope_C14_Set1",\
             # "istella-s":"istella-s"，
             "MQ2008":"MQ2008",
@@ -42,13 +45,24 @@ metric_name=[["test_disparity",'test_NDCG_1_aver'],["test_disparity",'test_NDCG_
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
 
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5",}
+    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness tolerance"}
 result_list=[]
 positionBiasSeverities=[
     # "positionBiasSeverity_0",
     "positionBiasSeverity_1",
     # "positionBiasSeverity_2"
     ]
+xMQfunctions=results_org.setScaleFunction(a=13600,b=.01,low=True)
+xMSLRfunctions=results_org.setScaleFunction(a=0,b=.01,low=True)
+xIsfunctions=[lambda x:x, lambda x:x]
+yMQfunctions=results_org.setScaleFunction(a=202,b=1,low=False)
+yMSLRfunctions=results_org.setScaleFunction(a=200,b=1,low=False)
+# xIsfunctions=[lambda x: np.log(np.log(210-x)), lambda x:210-np.exp(np.exp(x))]
+# yscaleFcn={"MQ2008":yMQfunctions,"MSLR10k":yIsfunctions}
+# xscaleFcn={"MQ2008":xMQfunctions,"MSLR10k":xIsfunctions}
+yscaleFcn={"MQ2008":yMQfunctions,"MSLR10k":yMSLRfunctions}
+xscaleFcn={"MQ2008":xMQfunctions,"MSLR10k":xMSLRfunctions}
+
 for positionBiasSeverity in positionBiasSeverities:
     OutputPath=os.path.join(path_root,"result")
     for datasets,data_name_cur in data_rename.items():
@@ -74,9 +88,9 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["QPFair-Horiz."]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]
         # result_validated["QPFair (Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_5")
         # result_validated["QPFair-Horiz."]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_5")
-        result_validated["QPFair (Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_10")
+        result_validated["QPFair"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_10")
         # result_validated["QPFair-Horiz."]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_10")
-        result_validated["QPFair (Ours)w/o Expl"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
+        result_validated["QPFair w/o Exploration"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
         # result_validated["QPFair-Horiz.w/o Expl"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
         result_validated=results_org.reorderDict(result_validated,config.desiredGradFair)
   
@@ -86,19 +100,24 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
         # result_validatedScatter["ExploreK"]=result["fairness_strategy_ExploreK"]
         for ind,metrics in enumerate(metric_name):
-            fig, axs = plt.subplots()
-            results_org.TradeoffPlot(result_validated, metrics,ax=axs,step=step)
-            results_org.TradeoffScatter(result_validatedScatter, metrics,ax=axs,step=step)
+            fig, axs = plt.subplots(figsize=(6.4,2.4))
+            results_org.RequirementPlot(result_validated, metrics,ax=axs,step=step)
+            # results_org.TradeoffScatter(result_validatedScatter, metrics,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
-            axs.set_xlabel(metrics[0])
+            axs.set_xlabel(metric_name_dict[metrics[0]])
             # axs.set_title(data_name_cur)
-            axs.set_xscale("log")
-            axs.set_yscale("mylog2f")
+            axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
+            axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
+            # axs.set_yscale("mylog2f")
             # axs[ind].set_xscale("log")
             # axs[0].set_yscale("symlog")
             # axs.legend(bbox_to_anchor=(1.1, 1.05)) 
-            # axs.legend()   
-            results_org.reorderLegend(config.desiredGradFair,axs)
-            plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
-            fig.savefig(os.path.join(OutputPath,"Realworld"+positionBiasSeverity+data_name_cur+metrics[1]+"abalation.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+            axs.legend()   
+            axs.xaxis.set_major_formatter(mticker.ScalarFormatter())
+            axs.xaxis.get_major_formatter().set_scientific(False)
+            axs.xaxis.get_major_formatter().set_useOffset(False)
+            plt.locator_params(axis='x', nbins=3)
+            plt.locator_params(axis='y', nbins=4) 
+            # plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
+            fig.savefig(os.path.join(OutputPath,"Realworld"+positionBiasSeverity+data_name_cur+metrics[1]+"abalation.pdf"), dpi=300, bbox_inches = 'tight', pad_inches = 0.05)
             plt.close(fig)

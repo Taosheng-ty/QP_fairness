@@ -70,5 +70,5 @@ for positionBiasSeverity in positionBiasSeverities:
             # axs[ind].set_yscale("log")
             # axs[0].set_yscale("symlog")
             axs[ind].legend(bbox_to_anchor=(1.1, 1.05))    
-        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"onlyQPtradeoffplot.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"onlyQPtradeoffplot.pdf"), dpi=300, bbox_inches = 'tight', pad_inches = 0.05)
         plt.close(fig)

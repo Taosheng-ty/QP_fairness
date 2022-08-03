@@ -83,6 +83,7 @@ for positionBiasSeverity in positionBiasSeverities:
         # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
         result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]
+        result_validated["MMF"]=result["fairness_strategy_MMF"]
         # result_validated["FairCo_maxnorm"]=result["fairness_strategy_FairCo_maxnorm"]
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]
         # result_validated["LP_1"]=result["fairness_strategy_LP"]["n_futureSession_1"]
@@ -113,15 +114,16 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validatedScatter["RandomK"]=result["fairness_strategy_Randomk"]
         result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
         result_validatedScatter["ExploreK"]=result["fairness_strategy_ExploreK"]
+        
         for ind,metrics in enumerate(metric_name):
             fig, axs = plt.subplots()
             results_org.RequirementPlot(result_validated, metrics,\
-                                        desiredGradFairColorDict=config.desiredGradFairColor,ax=axs,step=step)
+                                        desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
             for line in axs.lines:
 #                 line.set_marker(None)
                 line.set_linewidth(1.5)
             results_org.TradeoffScatter(result_validatedScatter, metrics,\
-                                        desiredGradFairColorDict=config.desiredGradFairColor,ax=axs,step=step)
+                                        desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
             axs.set_xlabel(metric_name_dict[metrics[0]])
             # axs.set_title(data_name_cur)
@@ -134,7 +136,7 @@ for positionBiasSeverity in positionBiasSeverities:
             legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,axs,returnHandles=True)
             plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
             resultpath=os.path.join(OutputPath,positionBiasSeverity+data_name_cur)
-            legend = axs.legend(handles, labels, loc=3,ncol=7, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
+            legend = axs.legend(handles, labels, loc=3,ncol=8, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
             results_org.export_legend(legend,resultpath+'legend.pdf')
             legend.remove()
             plt.locator_params(axis='both', nbins=4)

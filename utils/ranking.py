@@ -481,8 +481,10 @@ def get_rankingFromDatasplit(qid,dataSplit,**kwargs):
     Rel=dataSplit.getEstimatedAverageRelevance()
     qRel=dataSplit.query_values_from_vector(qid,Rel)
     qExpVector=dataSplit.query_values_from_vector(qid,dataSplit.exposure)
+    q_ItemFreqEachRank=dataSplit.query_values_from_vector(qid,dataSplit.ItemFreqEachRank)
     cacheLists=dataSplit.cacheLists[qid]
     kwargs["qid"]=qid
+    kwargs["ItemFreqEachRank"]=q_ItemFreqEachRank
     ranking=get_ranking(qRel,qExpVector,cacheLists=cacheLists,data=dataSplit.decomps[qid],\
       queryFreq=dataSplit.query_freq[qid],**kwargs)
     return ranking
@@ -512,9 +514,48 @@ def uncertaintyDoc(qExpVector,exploration_strategy):
       return 1/np.clip(qExpVector**2,0.1,np.inf)
     elif exploration_strategy==None:
       return np.zeros_like(qExpVector)
-
+def MMF(ItemAverageRele,ItemFreqEachRank,positionBias,rankListLength,fairness_tradeoff_param=0.5,G=None,personal_relevance=None):
+    """
+    # This function return the ranklist by using MMF method. https://arxiv.org/abs/2102.09670
+    """  
+    NumItems=ItemFreqEachRank.shape[0]
+    
+    if G is None:  ## then we are going to do individual fairness.
+        G=[[i]for i in range(NumItems)]
+    NumG=len(G)
+    itemRange=np.arange(NumItems)
+    GroupRange=np.arange(NumG)
+    ItemCumExpoEachRank=np.cumsum(ItemFreqEachRank*positionBias[np.newaxis,:],axis=1)
+    GroupCumExpoEachRank=np.array([np.mean(ItemCumExpoEachRank[i],axis=0) for i in G])
+    GroupAverageRele=np.array([np.mean(ItemAverageRele[i]) for i in G])
+    GroupAverageRele=np.clip(GroupAverageRele,0.001,np.inf)
+    G_size=np.array([len(G_i) for G_i in G])
+    GroupCumExpoOverReleEachRank=GroupCumExpoEachRank/GroupAverageRele[:,None]/G_size[:,None]
+    GroupCumExpoOverReleEachRank=GroupCumExpoOverReleEachRank+np.random.uniform(0,0.001,size=(NumG,rankListLength)) ## randomize when two scores tie
+    if personal_relevance is None:
+        personal_relevance=ItemAverageRele
+    ranking=[]
+    AvailableItemMask=np.ones(NumItems).astype(np.bool_)
+    for Rank_i in range(rankListLength):
+        AvailableItems=itemRange[AvailableItemMask]
+        if random.random()>fairness_tradeoff_param:   ## select according to relevance.
+            SelectedId=AvailableItems[np.argmax(ItemAverageRele[AvailableItemMask])]
+        else:
+            AvailableGroupMask=np.array([AvailableItemMask[i].sum()>0 for i in G]).astype(np.bool_)
+            AvailableGroup=GroupRange[AvailableGroupMask]
+            GroupId=AvailableGroup[np.argmin(GroupCumExpoOverReleEachRank[AvailableGroupMask,Rank_i])] ## find out the most underexposed group.
+            FilteredId=G[GroupId]  ## select items in this underexposed groups
+            AvailableItems=itemRange[FilteredId][AvailableItemMask[FilteredId]] ## select unmasked items in this underexposed groups
+            SelectedId=AvailableItems[np.argmax(ItemAverageRele[AvailableItems])]
+        AvailableItemMask[SelectedId]=np.False_
+        ranking.append(SelectedId)
+    ranking=np.array(ranking).astype(int)
+    # unique, counts = np.unique(ranking, return_counts=True)
+    # assert unique.shape[0]==ranking.shape[0],"there should not be repeated items"
+    return ranking
 def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,exploration_strategy,exploration_tradeoff_param,\
   rankListLength,n_futureSession=None,positionBias=None,cacheLists=[],queryFreq=0,data=None,**kwargs):
+
     num_item=qRel.shape[0]
     if fairness_strategy in ["FairCo",'FairCo_multip.',"GradFair","FairCo_maxnorm"]:
       Docunfairness=unfairnessDoc(qExpVector,qRel,fairness_strategy)
@@ -541,6 +582,10 @@ def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,explor
     elif fairness_strategy == "Randomk":
       RankingScore=np.random.uniform(0,1,qRel.shape)
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)
+    elif fairness_strategy == "MMF":
+      RankingScore=qRel
+      ItemFreqEachRank=kwargs["ItemFreqEachRank"]
+      ranking=MMF(RankingScore,ItemFreqEachRank,positionBias,rankListLength=rankListLength,fairness_tradeoff_param=fairness_tradeoff_param)
     elif fairness_strategy == "FairK":
       Docunfairness=unfairnessDoc(qExpVector,qRel,"GradFair")
       RankingScore=Docunfairness

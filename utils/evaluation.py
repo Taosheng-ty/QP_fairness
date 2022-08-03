@@ -1,4 +1,6 @@
 import numpy as np
+import time
+import datetime
 def DCG(sampled_rankings, q_doc_weights,rank_weights):
     """
     This funciton return the DCG.
@@ -134,3 +136,16 @@ def outputFairnessData(data,OutputDict):
         unfairness=fcn(q_exposure,q_rel,q_freq=q_freq)
         logName=fcnName
         OutputDict[logName].append(unfairness)
+
+class TimeExecute:
+    def __init__(self):
+        self.start=time.time()
+        self.Allstart=self.start
+        now = datetime.datetime.now()
+        print(now)
+    def getTime(self):
+        CurTime=time.time()
+        timeElapse=CurTime-self.start
+        self.start=CurTime
+        return timeElapse,CurTime-self.Allstart
+ 

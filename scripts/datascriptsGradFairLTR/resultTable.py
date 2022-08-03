@@ -59,7 +59,7 @@ for positionBiasSeverity in positionBiasSeverities:
             if not os.path.isdir(resultPath):
                 # print(path)       
                 continue
-            # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
+            result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
             result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
             results_org.iterate_applyfunction(result,cal_timeFor1kLists)
             # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
@@ -67,6 +67,7 @@ for positionBiasSeverity in positionBiasSeverities:
             # result_validated["Randomk"]=result["fairness_strategy_Randomk"]
             result_validated["FairK"]=result["fairness_strategy_FairK"]
             result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
+            result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             result_validated["MCFair"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             # result_validated["FairCo_explore-1"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]

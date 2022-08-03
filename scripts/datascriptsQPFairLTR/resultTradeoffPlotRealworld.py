@@ -24,12 +24,14 @@ path_root="localOutput/Mar292022Data20Docs/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTR/relvance_strategy_EstimatedAverage"
 # path_root="localOutput/QPFairLTRistella/relvance_strategy_EstimatedAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_EstimatedAverage"
+path_root="localOutput/July3QPFairLTR/relvance_strategy_EstimatedAverage"
+# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_EstimatedAverage"
 step=19  
 data_rename={            
             # "Movie":"Movie",\
             # "News":"News",\
             # "MSLR-WEB30k":"MSLR-WEB30k",\
-            # "MSLR-WEB10k":"MSLR10k",\
+            "MSLR-WEB10k":"MSLR10k",\
             # "Webscope_C14_Set1":"Webscope_C14_Set1",\
             # "istella-s":"istella-s"，
             "MQ2008":"MQ2008",
@@ -39,11 +41,27 @@ data_rename={
 metric_name=[["test_disparity",'test_NDCG_1_aver'],["test_disparity",'test_NDCG_3_aver'],\
     ["test_disparity",'test_NDCG_5_aver'],["test_disparity",'test_NDCG_1_cumu'],["test_disparity",'test_NDCG_3_cumu'],\
     ["test_disparity",'test_NDCG_5_cumu'],]
+metric_name=[["test_disparity",'test_NDCG_1_cumu'],["test_disparity",'test_NDCG_3_cumu'],\
+    ["test_disparity",'test_NDCG_5_cumu']]
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
 
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5",}
+    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5",\
+                  "test_disparity":"Unfairness tolerance"}
 result_list=[]
+yMQfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
+yIsfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
+
+xMQfunctions=results_org.setScaleFunction(a=10,b=1,low=True)
+# xMQfunctions=results_org.setScaleFunction(a=2.2*10**5,b=1,low=False)
+eye=[lambda x:x, lambda x:x]
+# xMQfunctions=results_org.setScaleFunction(a=-3,b=1,low=True)
+# xIsfunctions=[lambda x: np.log(np.log(210-x)), lambda x:210-np.exp(np.exp(x))]
+# yscaleFcn={"MQ2008":yMQfunctions,"MSLR10k":yIsfunctions}
+# xscaleFcn={"MQ2008":xMQfunctions,"MSLR10k":xIsfunctions}
+yscaleFcn={"MQ2008":eye,"MSLR10k":eye}
+xscaleFcn={"MQ2008":xMQfunctions,"MSLR10k":eye}
+xLimi={"MQ2008test_NDCG_1_cumu":[13100, 26000, 191, 201],"MQ2008test_NDCG_3_cumu":[13300, 26000, 185, 201],"MQ2008test_NDCG_5_cumu":[13300, 26000, 185, 201]}
 positionBiasSeverities=[
     # "positionBiasSeverity_0",
     "positionBiasSeverity_1",
@@ -51,6 +69,7 @@ positionBiasSeverities=[
     ]
 for positionBiasSeverity in positionBiasSeverities:
     OutputPath=os.path.join(path_root,"result")
+    os.makedirs(OutputPath, exist_ok=True)
     for datasets,data_name_cur in data_rename.items():
         
         result_validated={}
@@ -84,8 +103,8 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["QPFair-Horiz."]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]
         # result_validated["QPFair (Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_5")
         # result_validated["QPFair-Horiz."]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_5")
-        result_validated["QPFair (Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_10")
-        result_validated["QPFair-Horiz."]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_10")
+        result_validated["QPFair(Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_10")
+        result_validated["QPFair-Horiz.(Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_10")
         # result_validated["QPFair (Ours)0"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
         # result_validated["QPFair-Horiz.0"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
         result_validated=results_org.reorderDict(result_validated,config.desiredGradFair)
@@ -93,22 +112,52 @@ for positionBiasSeverity in positionBiasSeverities:
         result_validatedScatter={}
         result_validatedScatter["TopK"]=result["fairness_strategy_Topk"]
         result_validatedScatter["RandomK"]=result["fairness_strategy_Randomk"]
-        # result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
+        result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
         # result_validatedScatter["ExploreK"]=result["fairness_strategy_ExploreK"]
         for ind,metrics in enumerate(metric_name):
             fig, axs = plt.subplots()
-            results_org.TradeoffPlot(result_validated, metrics,ax=axs,step=step)
-            results_org.TradeoffScatter(result_validatedScatter, metrics,ax=axs,step=step)
+            results_org.RequirementPlot(result_validated, metrics,\
+                                        desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
+            for line in axs.lines:
+#                 line.set_marker(None)
+                line.set_linewidth(1.5)
+            results_org.TradeoffScatter(result_validatedScatter, metrics,\
+                                        desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
-            axs.set_xlabel(metrics[0])
+            axs.set_xlabel(metric_name_dict[metrics[0]])
+
+            if "MQ" in data_name_cur:
+                recPosition=[0.15, 0.1, 0.7, 0.6]
+                axins = axs.inset_axes(recPosition)
+                results_org.RequirementPlot(result_validated, metrics,\
+                                            desiredColorDict=config.desiredGradFairColor,ax=axins,step=step)
+                results_org.TradeoffScatter(result_validatedScatter, metrics,\
+                                            desiredColorDict=config.desiredGradFairColor,ax=axins,step=step)
+                x1, x2, y1, y2 = xLimi[data_name_cur+metrics[1]]
+                axins.set_xlim(x1, x2)
+                axins.set_ylim(y1, y2)
+                axins.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
+                axs.indicate_inset_zoom(axins, edgecolor="black",alpha=0.3)
+                axins.set_xticklabels([])
+                axins.set_yticklabels([])
             # axs.set_title(data_name_cur)
-            axs.set_xscale("log")
-            axs.set_yscale("mylog2f")
-            # axs[ind].set_xscale("log")
-            # axs[0].set_yscale("symlog")
+            # axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
+            # axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
+            # axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
+            # axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
+            # if "MSLR" in data_name_cur:
+            #     axs.set_xscale("log")
+            legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,axs,returnHandles=True)
+            plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
+            resultpath=os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"Realworld")
+            legend = axs.legend(handles, labels, loc=3,ncol=8, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
+            results_org.export_legend(legend,resultpath+'legend.pdf')
+            legend.remove()
+            plt.locator_params(axis='x', nbins=3)
+            # plt.locator_params(axis='y', nbins=4) 
             # axs.legend(bbox_to_anchor=(1.1, 1.05)) 
             # axs.legend()   
-            results_org.reorderLegend(config.desiredGradFair,axs)
-            plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
-            fig.savefig(os.path.join(OutputPath,"Realworld"+positionBiasSeverity+data_name_cur+metrics[1]+"tradeoffplot.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+            # results_org.reorderLegend(config.desiredGradFair,axs)
+            # plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
+            fig.savefig(os.path.join(OutputPath,"Realworld"+positionBiasSeverity+data_name_cur+metrics[1]+"tradeoffplot.pdf"), dpi=300, bbox_inches = 'tight', pad_inches = 0.05)
             plt.close(fig)

@@ -28,7 +28,8 @@ if __name__ == '__main__':
                         default="localOutput/",
                         help="Path to result logs")
     parser.add_argument("--dataset_name", type=str,
-                        default="MQ2008",
+                        default="MSLR-WEB10k",
+                        choices=['MQ2008', 'MSLR-WEB10k',],
                         help="Name of dataset to sample from.")
     parser.add_argument("--dataset_info_path", type=str,
                         default="LTRlocal_dataset_info.txt",
@@ -117,27 +118,27 @@ if __name__ == '__main__':
                 np.add.at(qExpVectorResult,ranking,positionBias)
                 # print(QuotaEachItem.sum())
                 assert np.isclose(qExpVectorResult.sum(),QuotaEachItemSum)
-                error[key+"_MAE"].append(np.mean(np.abs(QuotaEachItemOrig-qExpVectorResult)/qExpVectorResult.mean())/2)
+                error[key].append(np.mean(np.abs(QuotaEachItemOrig-qExpVectorResult)/qExpVectorResult.mean())/2)
                 # MAError_max.append(np.max(np.abs(QuotaEachItemOrig,qExpVectorResult)))
                 # ErrDict[key+"_ErrMaxAbs"].append(np.max(np.abs(QuotaEachItemOrig-qExpVectorResult)))
                 # ErrDict[key+"_ErrMaxRelative"].append(np.max(np.abs(QuotaEachItemOrig-qExpVectorResult))/qExpVectorResult.mean())
         for key,fcn in AllocationFcn.items():
-            ErrDict[key+"_MAE"].append(np.mean(error[key+"_MAE"]))
-    fig, ax = plt.subplots()
+            ErrDict[key].append(np.mean(error[key]))
+    fig, ax = plt.subplots(figsize=(6.4,2.4))
     for key,value in ErrDict.items():
-        if "_MAE" not in key:
-            continue
+        # if "_MAE" not in key:
+        #     continue
         plt.plot(n_futureSessions,value,label=key)
     # plt.plot(n_futureSessions,MAError_max1,label="Sto")
     # plt.plot(n_futureSessions,MAError_max2,)
-    ax.set_xlabel("the number of future session. $nf$")
+    ax.set_xlabel("The number of future sessions to consider.")
     ax.set_ylabel("MAE")
-    ax.set_title("Error of exposure by vertical allocation")
+    # ax.set_title("Exposure Error of exposure by vertical allocation")
     # axs[ind].set_xscale("log")
     # axs[0].set_yscale("symlog")
     # ax.legend(bbox_to_anchor=(1.1, 1.05))    
     ax.legend()    
     OutputPath=os.path.join(args.log_dir,"AllocationError")
     os.makedirs(OutputPath,exist_ok=True)
-    fig.savefig(os.path.join(OutputPath,"AllocationError.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+    fig.savefig(os.path.join(OutputPath,args.dataset_name+"AllocationError.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
     plt.close(fig)

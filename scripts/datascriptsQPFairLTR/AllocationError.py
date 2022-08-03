@@ -12,6 +12,8 @@ from collections import defaultdict
 from progressbar import progressbar
 import argparse
 from str2bool import str2bool
+import pickle
+from matplotlib.ticker import FuncFormatter
 import json
 import random
 import utils.dataset as dataset
@@ -28,7 +30,7 @@ if __name__ == '__main__':
                         default="localOutput/",
                         help="Path to result logs")
     parser.add_argument("--dataset_name", type=str,
-                        default="MSLR-WEB10k",
+                        default="MQ2008",
                         help="Name of dataset to sample from.")
     parser.add_argument("--dataset_info_path", type=str,
                         default="LTRlocal_dataset_info.txt",
@@ -98,46 +100,57 @@ if __name__ == '__main__':
     AllocationFcn={"Horizontal":rnk.getHorizontalRanking,"Vertical":rnk.getVerticalRanking}
     queryRndSeed=np.random.default_rng(args.random_seed) 
     datasplit=data.test
-    for n_futureSession in n_futureSessions: 
-        queriesList=datasplit.queriesList
-        error=defaultdict(list)
-        for qid in progressbar(queriesList):
-            qExpVector=datasplit.query_values_from_vector(qid,datasplit.exposure)
-            qRel=datasplit.query_values_from_vector(qid,datasplit.label_vector)
-            QuotaEachItem=rnk.getQuotaEachItemNDCG(qExpVector,qRel,positionBias,n_futureSession,args.fairness_tradeoff_param)
-            QuotaEachItemSum=QuotaEachItem.sum()
-            QuotaEachItemOrig=np.zeros_like(QuotaEachItem)
-            QuotaEachItemOrig[:]=QuotaEachItem
-            # ExpoBackwardCum=rnk.getExpoBackwardCum(n_futureSession,args.rankListLength,positionBias)
-            # ranking=rnk.getVerticalRanking(qRel,args.rankListLength,n_futureSession,QuotaEachItem,positionBias)
+    OutputPath=os.path.join(args.log_dir,"AllocationError")
+    SavePath=os.path.join(OutputPath,args.dataset_name+"AllocError.pkl")
+    if  os.path.isfile(SavePath): 
+        with open(SavePath, 'rb') as f:
+            ErrDict = pickle.load(f)
+    else:
+        for n_futureSession in n_futureSessions: 
+            queriesList=datasplit.queriesList
+            error=defaultdict(list)
+            for qid in progressbar(queriesList):
+                qExpVector=datasplit.query_values_from_vector(qid,datasplit.exposure)
+                qRel=datasplit.query_values_from_vector(qid,datasplit.label_vector)
+                QuotaEachItem=rnk.getQuotaEachItemNDCG(qExpVector,qRel,positionBias,n_futureSession,args.fairness_tradeoff_param)
+                QuotaEachItemSum=QuotaEachItem.sum()
+                QuotaEachItemOrig=np.zeros_like(QuotaEachItem)
+                QuotaEachItemOrig[:]=QuotaEachItem
+                # ExpoBackwardCum=rnk.getExpoBackwardCum(n_futureSession,args.rankListLength,positionBias)
+                # ranking=rnk.getVerticalRanking(qRel,args.rankListLength,n_futureSession,QuotaEachItem,positionBias)
+                for key,fcn in AllocationFcn.items():
+                    ranking=fcn(qRel,args.rankListLength,n_futureSession,QuotaEachItem,positionBias)
+                    ranking=np.array(ranking).astype(np.int)
+                    qExpVectorResult=np.zeros_like(qExpVector)
+                    np.add.at(qExpVectorResult,ranking,positionBias)
+                    # print(QuotaEachItem.sum())
+                    assert np.isclose(qExpVectorResult.sum(),QuotaEachItemSum)
+                    error[key+"_MAE"].append(np.sum(np.abs(QuotaEachItemOrig-qExpVectorResult)/qExpVectorResult.sum()))
+                    # MAError_max.append(np.max(np.abs(QuotaEachItemOrig,qExpVectorResult)))
+                    # ErrDict[key+"_ErrMaxAbs"].append(np.max(np.abs(QuotaEachItemOrig-qExpVectorResult)))
+                    # ErrDict[key+"_ErrMaxRelative"].append(np.max(np.abs(QuotaEachItemOrig-qExpVectorResult))/qExpVectorResult.mean())
             for key,fcn in AllocationFcn.items():
-                ranking=fcn(qRel,args.rankListLength,n_futureSession,QuotaEachItem,positionBias)
-                ranking=np.array(ranking).astype(np.int)
-                qExpVectorResult=np.zeros_like(qExpVector)
-                np.add.at(qExpVectorResult,ranking,positionBias)
-                # print(QuotaEachItem.sum())
-                assert np.isclose(qExpVectorResult.sum(),QuotaEachItemSum)
-                error[key+"_MAE"].append(np.mean(np.abs(QuotaEachItemOrig-qExpVectorResult)/qExpVectorResult.mean())/2)
-                # MAError_max.append(np.max(np.abs(QuotaEachItemOrig,qExpVectorResult)))
-                # ErrDict[key+"_ErrMaxAbs"].append(np.max(np.abs(QuotaEachItemOrig-qExpVectorResult)))
-                # ErrDict[key+"_ErrMaxRelative"].append(np.max(np.abs(QuotaEachItemOrig-qExpVectorResult))/qExpVectorResult.mean())
-        for key,fcn in AllocationFcn.items():
-            ErrDict[key+"_MAE"].append(np.mean(error[key+"_MAE"]))
-    fig, ax = plt.subplots()
+                ErrDict[key+"_MAE"].append(np.mean(error[key+"_MAE"]))
+        with open(SavePath, 'wb') as f:
+            pickle.dump(ErrDict, f)
+
+    fig, ax = plt.subplots(figsize=(6.4,2.4))
     for key,value in ErrDict.items():
         if "_MAE" not in key:
             continue
+        key=key.split("_")[0]
         plt.plot(n_futureSessions,value,label=key)
     # plt.plot(n_futureSessions,MAError_max1,label="Sto")
     # plt.plot(n_futureSessions,MAError_max2,)
-    ax.set_xlabel("the number of future session. $nf$")
-    ax.set_ylabel("MAE")
-    ax.set_title("Error of exposure by vertical allocation")
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y))) 
+    ax.set_xlabel("The number of planning session.")
+    ax.set_ylabel("Allocation Error")
+    # ax.set_title("Error of exposure by vertical allocation")
     # axs[ind].set_xscale("log")
     # axs[0].set_yscale("symlog")
     # ax.legend(bbox_to_anchor=(1.1, 1.05))    
     ax.legend()    
-    OutputPath=os.path.join(args.log_dir,"AllocationError")
+    
     os.makedirs(OutputPath,exist_ok=True)
     fig.savefig(os.path.join(OutputPath,args.dataset_name+"AllocationError.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
     plt.close(fig)

@@ -55,11 +55,11 @@ for positionBiasSeverity in positionBiasSeverities:
         for ind,metrics in enumerate(metric_name):
             results_org.paramIterationPlot(result_validated, metrics,ax=axs[ind],step=step)
             axs[ind].set_ylabel(metric_name_dict[metrics])
-            axs[ind].set_xlabel("# of future sessions to consider")
+            axs[ind].set_xlabel("The number of future sessions to consider.")
             axs[ind].set_title(data_name_cur)
             # axs[ind].set_xscale("log")
             # axs[0].set_yscale("symlog")
             axs[ind].legend(bbox_to_anchor=(1.1, 1.05))    
         
-        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"performance_along_future.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
+        fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"performance_along_future.pdf"), dpi=300, bbox_inches = 'tight', pad_inches = 0.05)
         plt.close(fig)

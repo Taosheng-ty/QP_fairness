@@ -92,7 +92,7 @@ class decoms:
 
 
 class DataFoldSplit(object):
-  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector,queryLeastLength=0,relvance_strategy=None):
+  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector,queryLeastLength=0,rankListLength=5, relvance_strategy=None):
     self.datafold = datafold
     self.name = name
     self.doclist_ranges = doclist_ranges
@@ -107,6 +107,12 @@ class DataFoldSplit(object):
     self.ClickSum=np.zeros_like(label_vector).astype(np.float64)
     self.relvance_strategy=relvance_strategy
     self.decomps=defaultdict(decoms)
+    self.n_doc=label_vector.shape[0]
+    self.rankListLength=rankListLength
+    self.ItemFreqEachRank=np.zeros(shape=(self.n_doc,rankListLength)).astype(np.float64)
+  def set_rankListLength(self,rankListLength):
+    self.rankListLength=rankListLength
+    self.ItemFreqEachRank=np.zeros(shape=(self.n_doc,rankListLength)).astype(np.float64)
   def set_relvance_strategy(self,relvance_strategy):
     self.relvance_strategy=relvance_strategy
   def voidFeature(self):
@@ -114,9 +120,12 @@ class DataFoldSplit(object):
   def updateStatistics(self,qid,clicks,ranking,positionBias):
     self.query_freq[qid]+=1
     q_docFreq=self.query_values_from_vector(qid,self.docFreq)
+    q_ItemFreqEachRank=self.query_values_from_vector(qid,self.ItemFreqEachRank)
     exposure=self.query_values_from_vector(qid,self.exposure)
     ClickSum=self.query_values_from_vector(qid,self.ClickSum)
     weightedClicksAver=self.query_values_from_vector(qid,self.weightedClicksAver)
+    indArange=np.arange(ranking.shape[0])
+    np.add.at(q_ItemFreqEachRank,[ranking,indArange],1)
     np.add.at(q_docFreq,ranking,1)
     np.add.at(exposure,ranking,positionBias)
     np.add.at(ClickSum,ranking,clicks)
@@ -473,7 +482,8 @@ def expRelConvert(label,epsilon=0.1):
   maxLabel=np.max(label)
   label=epsilon+(1-epsilon)*(2**label-1)/(2**maxLabel-1)
   return label
-def get_data(dataset,dataset_info_path,fold_id,query_least_size=0,queryMaximumLength=np.inf,relvance_strategy="TrueAverage",voidFeature=True,RelConvertfcn=expRelConvert):
+def get_data(dataset,dataset_info_path,fold_id,query_least_size=0,queryMaximumLength=np.inf,\
+  relvance_strategy="TrueAverage",voidFeature=True,RelConvertfcn=expRelConvert, rankListLength=5,):
     data = get_dataset_from_json_info(
                   dataset,
                   dataset_info_path,
@@ -486,6 +496,7 @@ def get_data(dataset,dataset_info_path,fold_id,query_least_size=0,queryMaximumLe
     for data_split in [data.test,data.train,data.validation]:
       data_split.filtered_query_sizes(query_least_size,queryMaximumLength)
       data_split.set_relvance_strategy(relvance_strategy)
+      data_split.set_rankListLength(rankListLength)
       if voidFeature:
         data_split.voidFeature()
       data_split.label_vector=RelConvertfcn(data_split.label_vector)

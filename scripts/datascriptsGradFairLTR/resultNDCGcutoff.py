@@ -25,7 +25,7 @@ data_rename={
             # "istella-s":"istella-s"，
             "MQ2008":"MQ2008",
             # "MQ2007":"MQ2007",
-            "istella-s":"ist"
+            # "istella-s":"ist"
 }
 MQfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
 Isfunctions=results_org.setScaleFunction(a=-10,b=1,low=True)
@@ -73,6 +73,7 @@ for positionBiasSeverity in positionBiasSeverities:
         result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+        result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
 
 
@@ -113,7 +114,7 @@ for positionBiasSeverity in positionBiasSeverities:
         
         result_dict={index:[x,result_dfram.loc[index].to_list()] for index in result_validated.keys()}
         results_org.plot(result_dict,ax=ax,\
-                                        desiredGradFairColorDict=config.desiredGradFairColor)
+                                        desiredColorDict=config.desiredGradFairColor)
         ax.set_xticks(x)
         ax.set_xlabel("Cutoff")
         ax.set_ylabel("cNDCG")
