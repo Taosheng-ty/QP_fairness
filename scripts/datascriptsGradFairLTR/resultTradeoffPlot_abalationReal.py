@@ -2,6 +2,11 @@ import sys
 import os
 import pandas as pd
 import matplotlib.pyplot as plt 
+import matplotlib
+# plt.rcParams['pdf.fonttype']=42
+matplotlib.rcParams['text.usetex'] = True
+font = {'size'   : 12}
+import config
 sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
 results_org.figureConfig()
@@ -23,7 +28,7 @@ data_rename={
             # "MSLR-WEB30k":"MSLR-WEB30k",\
             # "MSLR-WEB10k":"MSLR-WEB10k",\
             # "Webscope_C14_Set1":"Webscope_C14_Set1",\
-            "istella-s":"ist",
+            # "istella-s":"ist",
             "MQ2008":"MQ2008",
             # "MQ2007":"MQ2007",
 }
@@ -33,7 +38,7 @@ metric_name=[["test_disparity",'test_NDCG_1_aver'],["test_disparity",'test_NDCG_
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
 
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness"}
+    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness tolerance"}
 result_list=[]
 same=[lambda x:x, lambda x:x]
 yMQfunctions=results_org.setScaleFunction(a=201,b=1,low=False)
@@ -72,7 +77,9 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["FairCo"]=result["fairness_strategy_FairCo"]
         # result_validated["FairCo_maxnorm"]=result["fairness_strategy_FairCo_maxnorm"]
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]
-        result_validated["Eff.+Uncert.+Fair."]= results_org.getGrandchildNode(result["fairness_strategy_GradFair"],"exploration_tradeoff_param_20")
+        result_validatedMC={}
+        # result_validated["Eff.+Uncert.+Fair."]= results_org.getGrandchildNode(result["fairness_strategy_GradFair"],"exploration_tradeoff_param_100")
+        result_validated["Eff.+Uncert.+Fair."]= results_org.getGrandchildNode(result["fairness_strategy_GradFair"],"exploration_tradeoff_param_100")
 
         result_validated["Eff.+Fair."]= results_org.getGrandchildNode(result["fairness_strategy_GradFair"],"exploration_tradeoff_param_0.0")
         result_validated["Eff.+Uncert."]= result["fairness_strategy_GradFair"]["fairness_tradeoff_param_0.0"]
@@ -100,17 +107,18 @@ for positionBiasSeverity in positionBiasSeverities:
         result_validatedScatter["only Uncert."]=result["fairness_strategy_ExploreK"]
         for ind,metrics in enumerate(metric_name):
             fig, axs = plt.subplots(figsize=(6.4,2.4))
-
+            # results_org.RequirementPlot(result_validatedMC, metrics,ax=axs,step=step)
             results_org.TradeoffPlot(result_validated, metrics,ax=axs,step=step)
             for line in axs.lines:
                 line.set_marker(None)
-                line.set_markersize(10)
+                # line.set_markersize(10)
             results_org.TradeoffScatter(result_validatedScatter, metrics,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
             axs.set_xlabel(metric_name_dict[metrics[0]])
             axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
             axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
-            plt.locator_params(axis='x', nbins=3)
+            # plt.locator_params(axis='x', nbins=3)
+            axs.set_xticks(ticks=[3000,20000,40000,60000])
             plt.locator_params(axis='y', nbins=4)   
             axs.legend(framealpha=0.2,bbox_to_anchor=(1.04,1), loc="upper left")
             fig.savefig(os.path.join(OutputPath,metrics[1]+positionBiasSeverity+data_name_cur+"Ablation_tradeoffplot.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)

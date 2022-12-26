@@ -2,12 +2,14 @@ import sys
 import os
 import pandas as pd
 sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
+# sys.path.append("/raid/taoyang/miniconda3/pkgs/texlive-core-20180414-pl526hc0a3334_3/share/texmf-dist/web2c")
 import results_org as results_org
 import config
 import matplotlib.pyplot as plt 
 import matplotlib
-font = {'family' : 'normal',
-        'size'   : 12}
+# plt.rcParams['pdf.fonttype']=42
+matplotlib.rcParams['text.usetex'] = True
+font = {'size'   : 12}
 from matplotlib import scale
 
 matplotlib.rc('font', **font)
@@ -25,7 +27,7 @@ data_rename={
             # "istella-s":"istella-s"，
             "MQ2008":"MQ2008",
             # "MQ2007":"MQ2007",
-            # "istella-s":"ist"
+            "istella-s":"ist"
 }
 MQfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
 Isfunctions=results_org.setScaleFunction(a=-10,b=1,low=True)
@@ -54,13 +56,13 @@ path_root="localOutput/Feb222022Data/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr252022LTR_more/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr262022LTR/relvance_strategy_TrueAverage"
 # path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
-
+ytop={"ist":210,"MQ2008":201}
 # path_root="localOutput/Mar292022Data20Docs/relvance_strategy_EstimatedAverage"
 for positionBiasSeverity in positionBiasSeverities:
     
     OutputPath=os.path.join(path_root,"result","MCFair")
     for datasets,data_name_cur in data_rename.items():
-        fig, ax = plt.subplots(figsize=(6.4,2.4))
+        fig, ax = plt.subplots(figsize=(6.0,1.8))
         result_list=[]  
         result_validated={}
         datasets="dataset_name_"+datasets
@@ -70,7 +72,8 @@ for positionBiasSeverity in positionBiasSeverities:
             # print(path)       
             continue
         
-        result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
+        # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
+        _,result=results_org.get_result_df(resultPath,groupby="iterations")
         # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
@@ -87,6 +90,7 @@ for positionBiasSeverity in positionBiasSeverities:
         if "fairness_strategy_LP" in result:
             result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+        result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
         # result_validated["QPfairNDCG_500"]=result["fairness_strategy_QPfairNDCG"]["n_futureSession_500"]['fairness_tradeoff_param_1.0']
         # result_validated["QPfairNDCG_500Hori"]=result["fairness_strategy_QPfairNDCGHorizontal"]["n_futureSession_500"]['fairness_tradeoff_param_1.0']       
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]["fairness_tradeoff_param_1000"]
@@ -114,17 +118,18 @@ for positionBiasSeverity in positionBiasSeverities:
         
         result_dict={index:[x,result_dfram.loc[index].to_list()] for index in result_validated.keys()}
         results_org.plot(result_dict,ax=ax,\
-                                        desiredColorDict=config.desiredGradFairColor)
+                                        desiredColorDict=config.desiredGradFairColor,desiredMarkerDict=config.desiredGradFairMarker)
         ax.set_xticks(x)
         ax.set_xlabel("Cutoff")
         ax.set_ylabel("cNDCG")
+        ax.set_ylim(top=ytop[data_name_cur])
         # ax.set_yscale("log")
         ax.set_yscale("function",functions=scaleFcn[data_name_cur])
         ax.set_xscale("function",functions=xscaleFcn[data_name_cur])
         # ax.legend(bbox_to_anchor=(1.1, 1.05))
         legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,ax,returnHandles=True)
         # legend.nrow=2
-        ax.legend(handles,labels,bbox_to_anchor=(1.04,1), loc="upper left")
+        ax.legend(handles,labels,bbox_to_anchor=(1.04,1), loc="upper left",ncol=2)
         plt.locator_params(axis='x', nbins=5)
         os.makedirs(OutputPath, exist_ok=True)
         fig.savefig(os.path.join(OutputPath,positionBiasSeverity+data_name_cur+"NDCGcutoffcumu.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)

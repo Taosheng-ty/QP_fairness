@@ -36,14 +36,24 @@ desired_order_list=["relvance_strategy",'positionBiasSeverity',"dataset_name","f
 ##############################post-processing
 datasets=["MQ2008"]
 dataset_dict={"MQ2008":{"n_iteration":10**4,"queryMaximumLength":20}}
+
+list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['PLFair'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4],"n_futureSession":[10000000]}
+write_setting(datasets,list_settings,settings_base)
+##write setting.json for Topk and Randomk
+list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
+write_setting(datasets,list_settings,settings_base)
+
+
+
+
 ##write setting.json for 'FairCo', 'FairCo_multip.','FairCo_average'
 list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['FairCo', 'GradFair'],"fairness_tradeoff_param":[0.0,0.0001,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
               "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
 
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
-              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
+
 ##write setting.json for Topk and Randomk
 
 list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['Topk','Randomk',"FairK","ExploreK"],"random_seed":[0,1,2,3,4]}
@@ -71,9 +81,18 @@ write_setting(datasets,list_settings,settings_base)
 datasets=["MQ2008"]
 dataset_dict={"MQ2008":{"n_iteration":10**5,"queryMaximumLength":20}}
 ##write setting.json for 'FairCo', 'FairCo_multip.','FairCo_average'
+list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['PLFair'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4],"n_futureSession":[int(dataset_dict["MQ2008"]["n_iteration"]/10)]}
+write_setting(datasets,list_settings,settings_base)
+list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
+write_setting(datasets,list_settings,settings_base)
 
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'GradFair'],"fairness_tradeoff_param":[0.0,0.0001,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
-               "exploration_tradeoff_param":[0.0,0.1,0.5,1,5,10,20,50,100],"random_seed":[0,1,2,3,4]}
+
+list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'GradFair'],"fairness_tradeoff_param":[0.0,0.1,0.4,0.5,0.6,0.7,0.8,0.9,1,2,5,10,20,50,80,100,200,250,300,400,500,600,620,640,645,650,680,685,690,700,1000],\
+        #        "exploration_tradeoff_param":[0.0,0.1,0.5,1,5,10,20,50,100],
+               "exploration_tradeoff_param":[50,100],
+               "random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
 
 list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['FairCo'],"fairness_tradeoff_param":[0.0,0.00001,0.0001,0.0005,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
@@ -84,9 +103,7 @@ list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':p
                "exploration_tradeoff_param":[0.0,0.1,0.5,1,5,10,20,100,200,1000],"random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
 
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
-              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
+
 
 ##write setting.json for Topk and Randomk
 

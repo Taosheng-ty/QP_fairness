@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 font = {'family' : 'normal',
-        'size'   : 12}
+        'size'   : 14}
 
 matplotlib.rc('font', **font)
 
@@ -46,7 +46,7 @@ metric_name=[["test_disparity",'test_NDCG_1_aver'],["test_disparity",'test_NDCG_
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
 
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness"}
+    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness tolerance"}
 result_list=[]
 yMQfunctions=results_org.setScaleFunction(a=201,b=1,low=False)
 yIsfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
@@ -89,6 +89,7 @@ for positionBiasSeverity in positionBiasSeverities:
         if "fairness_strategy_LP" in result:
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]
             result_validated["ILP"]=result["fairness_strategy_ILP"]
+        result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]
         result_validated["MCFair(Ours)"]=result["fairness_strategy_GradFair"]
         result_validated["MMF"]=result["fairness_strategy_MMF"]
         for method in result_validated:
@@ -132,7 +133,7 @@ for positionBiasSeverity in positionBiasSeverities:
             legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,axs,returnHandles=True)
             plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
             resultpath=os.path.join(OutputPath,positionBiasSeverity+data_name_cur)
-            legend = axs.legend(handles, labels, loc=3,ncol=7, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
+            legend = axs.legend(handles, labels, loc=3,ncol=9, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
             results_org.export_legend(legend,resultpath+'legend.pdf')
             legend.remove()
             plt.locator_params(axis='both', nbins=4)

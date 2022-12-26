@@ -108,9 +108,9 @@ for positionBiasSeverity in positionBiasSeverities:
         for ind,metrics in enumerate(metric_name):
             fig, axs = plt.subplots(figsize=(6.4,2.4))
             results_org.RequirementPlot(result_validated, metrics,\
-                                        desiredGradFairColorDict=config.desiredGradFairColor,ax=axs,step=step)
-            for line in axs.lines:
-                line.set_marker(None)
+                                        desiredColorDict=config.desiredGradFairColor,desiredMarkerDict=config.desiredGradFairMarker,ax=axs,step=step)
+            # for line in axs.lines:
+            #     line.set_marker(None)
             # results_org.TradeoffScatter(result_validatedScatter, metrics,ax=axs[ind],step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
             axs.set_xlabel(metric_name_dict[metrics[0]])
@@ -120,7 +120,8 @@ for positionBiasSeverity in positionBiasSeverities:
             # axs[ind].legend(bbox_to_anchor=(1.1, 1.05))    
             axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
             axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
-            plt.locator_params(axis='x', nbins=2)
+            axs.set_xticks(ticks=[1000,20000,40000,60000])
+            # plt.locator_params(axis='x', nbins=2)
             plt.locator_params(axis='y', nbins=4)
             axs.legend(framealpha=1, frameon=True,bbox_to_anchor=(1.05, 1))
             fig.savefig(os.path.join(OutputPath,metrics[1]+positionBiasSeverity+data_name_cur+"FairCoExplorationRe.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)

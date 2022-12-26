@@ -26,7 +26,7 @@ data_rename={
 }
 metric_name=['test_NDCG_1_aver','test_NDCG_3_aver','test_NDCG_5_aver',"test_disparity","time1kLists"]
 metric_name=['test_NDCG_1_cumu','test_NDCG_3_cumu','test_NDCG_5_cumu',"test_disparity","time1kLists"]
-metric_name=["test_disparity"]
+metric_name=["test_disparity","time1kLists"]
 metric_name_dict={"discounted_sum_test_ndcg":"Cum-NDCG","test_fairness":"bfairness","average_sum_test_ndcg":"average_cum_ndcg",\
     'f1_test_rel_fair':'crf-f1',"neg_test_exposure_disparity_not_divide_qfreq":"cnegdisparity",\
         'test_exposure_disparity_not_divide_qfreq':"Disparity"}
@@ -67,7 +67,7 @@ for positionBiasSeverity in positionBiasSeverities:
             # result_validated["Randomk"]=result["fairness_strategy_Randomk"]
             result_validated["FairK"]=result["fairness_strategy_FairK"]
             result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
-            result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+            
             result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             result_validated["MCFair"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             # result_validated["FairCo_explore-1"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]
@@ -80,8 +80,8 @@ for positionBiasSeverity in positionBiasSeverities:
             # result_validated["FairCo_average_explore-50-20"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_50"]["exploration_tradeoff_param_20"]
             # result_validated["FairCo_explore-1-20"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_20"]
             # result_validated["FairCo_average_explore-1-20"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_20"]
-
-
+            result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+            result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             # result_validated["LP_200"]=result["fairness_strategy_LP"]["n_futureSession_200"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             # result_validated["LP-1.0"]=result["fairness_strategy_LP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]

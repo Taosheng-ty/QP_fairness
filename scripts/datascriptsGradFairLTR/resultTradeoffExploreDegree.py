@@ -3,8 +3,10 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt 
 import matplotlib
-font = {'family' : 'normal',
-        'size'   : 12}
+plt.rcParams['pdf.fonttype']=42
+font = {'size'   : 12}
+
+matplotlib.rc('font', **font)
 
 matplotlib.rc('font', **font)
 import config

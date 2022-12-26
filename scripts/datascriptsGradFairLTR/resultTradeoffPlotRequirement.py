@@ -3,9 +3,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt 
 import matplotlib
-
-font = {'family' : 'normal',
-        'size'   : 14}
+import numpy as np
+plt.rcParams['pdf.fonttype']=42
+font = {'size'   : 15}
 
 matplotlib.rc('font', **font)
 
@@ -40,13 +40,15 @@ data_rename={
             # "MQ2007":"MQ2007",
             "istella-s":"ist",
 }
+xticks={"MQ2008":[20,100,300],"ist":[0,20,30]}
+
 metric_name=[["test_disparity",'test_NDCG_1_aver'],["test_disparity",'test_NDCG_3_aver'],\
     ["test_disparity",'test_NDCG_5_aver'],["test_disparity",'test_NDCG_1_cumu'],["test_disparity",'test_NDCG_3_cumu'],\
     ["test_disparity",'test_NDCG_5_cumu'],]
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
 
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness"}
+    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness tolerance"}
 result_list=[]
 yMQfunctions=results_org.setScaleFunction(a=201,b=1,low=False)
 yIsfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
@@ -62,7 +64,31 @@ xscaleFcn={"MQ2008":xMQfunctions,"ist":xIsfunctions}
 #     path=os.path.join(path_root,datasets)
 
 # desiredGradFair=["Topk","ExploreK","FairCo","ILP","LP","FairK(Ours)","GradFair(Ours)"]
+def smooth(x,y, box_pts=2):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='same')
+    return x,y_smooth
 
+from scipy.interpolate import make_interp_spline, BSpline
+from scipy.signal import savgol_filter
+# 300 represents number of points to make between T.min and T.max
+
+# def smooth(x,y, box_pts=2):
+#     if x.shape[0]<=1:
+#         return x,y
+#     x=x+np.arange(y.shape[0])/10000000
+#     xnew = np.linspace(x.min(), x.max(), 300) 
+#     spl = make_interp_spline(x, y, k=3)  # type: BSpline
+#     power_smooth = spl(xnew)
+#     return xnew,power_smooth
+
+def smooth(x,y, box_pts=2):
+    if x.shape[0]<=3:
+        return x,y
+    window = 3
+    order = 2
+    y_smooth = savgol_filter(y, window, order)
+    return x,y_smooth
 positionBiasSeverities=[
     # "positionBiasSeverity_0",
     "positionBiasSeverity_1",
@@ -90,6 +116,7 @@ for positionBiasSeverity in positionBiasSeverities:
         if "fairness_strategy_LP" in result:
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]
             result_validated["ILP"]=result["fairness_strategy_ILP"]
+        result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]
         result_validated["MCFair(Ours)"]=result["fairness_strategy_GradFair"]
         for method in result_validated:
             result_validated[method]=results_org.getGrandchildNode(result_validated[method],"exploration_tradeoff_param_0.0")
@@ -118,7 +145,7 @@ for positionBiasSeverity in positionBiasSeverities:
         for ind,metrics in enumerate(metric_name):
             fig, axs = plt.subplots()
             results_org.RequirementPlot(result_validated, metrics,\
-                                        desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
+                                        desiredColorDict=config.desiredGradFairColor,desiredMarkerDict=config.desiredGradFairMarker,ax=axs,step=step,smoooth_fn=smooth)
             for line in axs.lines:
 #                 line.set_marker(None)
                 line.set_linewidth(1.5)
@@ -126,6 +153,7 @@ for positionBiasSeverity in positionBiasSeverities:
                                         desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
             axs.set_xlabel(metric_name_dict[metrics[0]])
+
             # axs.set_title(data_name_cur)
             # axs.set_xscale("log")
             # axs.set_yscale("mylog2f")
@@ -134,12 +162,17 @@ for positionBiasSeverity in positionBiasSeverities:
             axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
             axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
             legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,axs,returnHandles=True)
-            plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
+            plt.setp(plt.gca().get_legend().get_texts(), fontsize='15')
             resultpath=os.path.join(OutputPath,positionBiasSeverity+data_name_cur)
-            legend = axs.legend(handles, labels, loc=3,ncol=8, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
+            
+            
+            legend = axs.legend(handles, labels, loc=3,ncol=1, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
             results_org.export_legend(legend,resultpath+'legend.pdf')
             legend.remove()
-            plt.locator_params(axis='both', nbins=4)
+            # plt.locator_params(axis='both', nbins=4)
+            axs.set_xticks(ticks=xticks[data_name_cur])
+            # axs.set_xlim(left=20)
+            plt.locator_params(axis='y', nbins=4)
             # plt.grid()
             fig.savefig(os.path.join(OutputPath,"Requirement"+positionBiasSeverity+data_name_cur+metrics[1]+"tradeoffplot.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
             plt.close(fig)
