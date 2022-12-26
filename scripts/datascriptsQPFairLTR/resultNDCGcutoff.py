@@ -8,7 +8,7 @@ import config
 import matplotlib.pyplot as plt 
 import matplotlib
 font = {'family' : 'normal',
-        'size'   : 12}
+        'size'   : 14}
 
 matplotlib.rc('font', **font)
 # import BatchExpLaunch.s as tools
@@ -39,7 +39,7 @@ path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
-# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
+path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
 step=19  
 
 # xMQfunctions=results_org.setScaleFunction(a=203,b=1,low=False)
@@ -69,7 +69,8 @@ for positionBiasSeverity in positionBiasSeverities:
     
     OutputPath=os.path.join(path_root,"result")
     for datasets,data_name_cur in data_rename.items():
-        fig, ax = plt.subplots(figsize=(6.4,2.4))
+#         fig, ax = plt.subplots(figsize=(6.4,2.4))
+        fig, ax = plt.subplots()
         result_list=[]  
         result_validated={}
         datasets="dataset_name_"+datasets
@@ -85,14 +86,17 @@ for positionBiasSeverity in positionBiasSeverities:
         result_validated["RandomK"]=result["fairness_strategy_Randomk"]
 
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
+        result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         if "fairness_strategy_LP" in result:
             result_validated["ILP"]=result["fairness_strategy_ILP"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
         # result_validated["GradFair(Ours)"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
-        result_validated["FairK(Ours)"]=result["fairness_strategy_FairK"]
-        result_validated["QPFair(Ours)"]=result["fairness_strategy_QPFair"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"]
-        result_validated["QPFair-Horiz.(Ours)"]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"] 
+        result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+        # result_validated["FairK(Ours)"]=result["fairness_strategy_FairK"]
+        result_validated["FARA(Ours)"]=result["fairness_strategy_QPFair"]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"]
+        result_validated["FARA-Horiz.(Ours)"]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]['fairness_tradeoff_param_1.0']["exploration_tradeoff_param_0.0"] 
         # result_validated["GradFair"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_10"]
 
 
@@ -124,17 +128,22 @@ for positionBiasSeverity in positionBiasSeverities:
         result_dfram=result_dfram.reindex(columns=metric_name)
         
         result_dict={index:[x,result_dfram.loc[index].to_list()] for index in result_validated.keys()}
-        results_org.plot(result_dict,ax=ax,desiredColorDict=config.desiredGradFairColor)
+        results_org.plot(result_dict,ax=ax,desiredColorDict=config.desiredGradFairColor,\
+                                            desiredMarkerDict=config.desiredGradFairMarker,errbar=False)
         ax.set_xticks(x)
         ax.set_xlabel("Cutoff, $k_c$")
-        ax.set_ylabel("cNDCG")
+        ax.set_ylabel("cNDCG@$k_c$")
         # ax.set_yscale("log")
         # ax.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
         ax.set_yscale("function",functions=yscaleFcn[data_name_cur])       
         ax.set_ylim(60,y_lim[data_name_cur])
         legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,ax,returnHandles=True)
         # legend.nrow=2
-        ax.legend(handles,labels,bbox_to_anchor=(1, 0.5), loc="center left")
+        # ax.legend(handles,labels,bbox_to_anchor=(1, 0.5), loc="center left")
+        legend = ax.legend(handles, labels, loc=3,ncol=5, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
+        results_org.export_legend(legend,OutputPath+'legendNDCGcutoff.pdf')
+        legend.remove()
+        plt.locator_params(axis='y', nbins=4)
         # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         # ax.legend()
         os.makedirs(OutputPath, exist_ok=True)

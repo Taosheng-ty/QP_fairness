@@ -1,17 +1,20 @@
 import matplotlib.pyplot as plt 
 import itertools
-desiredGradFair=["QPFair(Ours)","QPFair-Horiz.(Ours)","FairK(Ours)","TopK","RandomK","ExploreK","FairCo","ILP","LP"]
-
+desiredGradFair=["FARA(Ours)","FARA-Horiz.(Ours)","MMF","PLFair","FairK(Ours)","TopK","RandomK","ExploreK","FairCo","ILP","LP"]
+desiredGradFair=["FARA(Ours)","FARA-Horiz.(Ours)","MMF","PLFair","FairCo","ILP","LP","TopK","RandomK"]
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors_list = prop_cycle.by_key()['color']
 colors=itertools.cycle(colors_list)
-
+marker = itertools.cycle(('v', '^', "<",">","p",'x',"X","D", 'o', '*')) 
 # desiredGradFairColor={"TopK":"red","ExploreK":"orange","FairK(Ours)":"green",\
 #                       "MCFair(Ours)":"blue","FairCo":"purple","ILP":"brown","LP":"pink"}
 desiredGradFairColor={}
+desiredGradFairMarker={}
 desiredGradFairColorlist=desiredGradFair
 for method in desiredGradFairColorlist:
     desiredGradFairColor[method]=next(colors)
+    desiredGradFairMarker[method]=next(marker)
+    
 def reorder(desiredList,curList):
     """
     This function index mapping from the curList according to desiredList.

@@ -39,8 +39,8 @@ if __name__ == '__main__':
                     default=5)
     parser.add_argument("--fairness_strategy", type=str,
                         choices=['FairCo', 'FairCo_multip.',"onlyFairness", 'GradFair',"Randomk","FairK",\
-                            "ExploreK","Topk","FairCo_maxnorm","QPFair","QPFair-Horiz.","ILP","LP","MMF"],
-                        default="MMF",
+                            "ExploreK","Topk","FairCo_maxnorm","QPFair","QPFair-Horiz.","ILP","LP","MMF","PLFair"],
+                        default="PLFair",
                         help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPFair','GradFair','Randomk','Topk']")
     parser.add_argument("--fairness_tradeoff_param", type=float,
                             default=0.5,
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                     default=4*10**4,
                     help="how many iteractions to simulate")
     parser.add_argument("--n_futureSession", type=int,
-                    default=100,
+                    default=1000000000,
                     help="how many future session we want consider in advance, only works if we use QPFair strategy.")
     parser.add_argument("--progressbar",  type=str2bool, nargs='?',
                     const=True, default=True,
@@ -78,6 +78,7 @@ if __name__ == '__main__':
     # args = parser.parse_args(args=[]) # for debug
     # load the data and filter out queries with number of documents less than query_least_size.
     argsDict=vars(args)
+    voidFeature=False if args.fairness_strategy=="PLFair" else True
     data = dataset.get_data(args.dataset_name,
                   args.dataset_info_path,
                   args.fold_id,
@@ -85,7 +86,7 @@ if __name__ == '__main__':
                   args.queryMaximumLength,
                   relvance_strategy=args.relvance_strategy,\
                   rankListLength= args.rankListLength,
-                  voidFeature=True)
+                  voidFeature=voidFeature)
     # begin simulation
     Logging=results_org.getLogging()
     positionBias=sim.getpositionBias(args.rankListLength,args.positionBiasSeverity) 

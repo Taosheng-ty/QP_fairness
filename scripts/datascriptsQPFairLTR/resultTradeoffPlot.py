@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 font = {'family' : 'normal',
-        'size'   : 12}
+        'size'   : 14}
 
 matplotlib.rc('font', **font)
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
@@ -31,7 +31,7 @@ path_root="localOutput/QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
-# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
+path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
 step=19  
 data_rename={            
             # "Movie":"Movie",\
@@ -97,23 +97,26 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["FairCo_maxnorm"]=result["fairness_strategy_FairCo_maxnorm"]
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]
         # result_validated["LP_1"]=result["fairness_strategy_LP"]["n_futureSession_1"]
-        result_validated["QPFair(Ours)"]=result["fairness_strategy_QPFair"]["n_futureSession_100"]
-        result_validated["QPFair-Horiz.(Ours)"]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]
+        result_validated["FARA(Ours)"]=result["fairness_strategy_QPFair"]["n_futureSession_100"]
+        result_validated["FARA-Horiz.(Ours)"]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]
         if "fairness_strategy_LP" in result:
             result_validated["LP"]=result["fairness_strategy_LP"]["n_futureSession_100000"]
             result_validated["ILP"]=result["fairness_strategy_ILP"]
+        result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]
+        result_validated["MMF"]=result["fairness_strategy_MMF"]
         for method in result_validated:
             result_validated[method]=results_org.getGrandchildNode(result_validated[method],"exploration_tradeoff_param_0.0")
         result_validated=results_org.reorderDict(result_validated,config.desiredGradFair)
         result_validatedScatter={}
         result_validatedScatter["TopK"]=result["fairness_strategy_Topk"]
         result_validatedScatter["RandomK"]=result["fairness_strategy_Randomk"]
-        result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
+        # result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
 #         result_validatedScatter["RandomK"]=result["fairness_strategy_Randomk"]
         for ind,metrics in enumerate(metric_name):
             fig, axs = plt.subplots()
             results_org.RequirementPlot(result_validated, metrics,\
-                                        desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
+                                        desiredColorDict=config.desiredGradFairColor,\
+                                            desiredMarkerDict=config.desiredGradFairMarker,ax=axs,step=step)
             for line in axs.lines:
 #                 line.set_marker(None)
                 line.set_linewidth(1.5)
@@ -123,10 +126,11 @@ for positionBiasSeverity in positionBiasSeverities:
             axs.set_xlabel(metric_name_dict[metrics[0]])
 
             if "MQ" in data_name_cur:
-                recPosition=[0.15, 0.1, 0.7, 0.6]
+                recPosition=[0.35, 0.3, 0.5, 0.45]
                 axins = axs.inset_axes(recPosition)
                 results_org.RequirementPlot(result_validated, metrics,\
-                                            desiredColorDict=config.desiredGradFairColor,ax=axins,step=step)
+                                            desiredColorDict=config.desiredGradFairColor,\
+                                            desiredMarkerDict=config.desiredGradFairMarker,ax=axins,step=step)
                 results_org.TradeoffScatter(result_validatedScatter, metrics,\
                                             desiredColorDict=config.desiredGradFairColor,ax=axins,step=step)
                 x1, x2, y1, y2 = 8000, 18000, 180, 200
@@ -145,10 +149,10 @@ for positionBiasSeverity in positionBiasSeverities:
             legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,axs,returnHandles=True)
             plt.setp(plt.gca().get_legend().get_texts(), fontsize='12')
             resultpath=os.path.join(OutputPath,positionBiasSeverity+data_name_cur)
-            legend = axs.legend(handles, labels, loc=3,ncol=8, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
+            legend = axs.legend(handles, labels, loc=3,ncol=10, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
             results_org.export_legend(legend,resultpath+'legend.pdf')
             legend.remove()
-            plt.locator_params(axis='x', nbins=3)
+            plt.locator_params(axis='x', nbins=2)
             # plt.locator_params(axis='y', nbins=4) 
             # axs.legend(bbox_to_anchor=(1.1, 1.05)) 
             # axs.legend()   

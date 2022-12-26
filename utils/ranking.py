@@ -8,6 +8,8 @@ import scipy
 import scipy.optimize as opt
 import utils.birkhoff as birkhoff
 import utils.simulation as sim
+import utils.PLfair.utils.PLFairTrain as PLFairTrain
+import utils.PLfair.utils.plackettluce as pl
 def unfairnessDoc(obs,relevance_esti_orig,fairness_strategy,**kwargs):
 
     """
@@ -485,7 +487,7 @@ def get_rankingFromDatasplit(qid,dataSplit,**kwargs):
     cacheLists=dataSplit.cacheLists[qid]
     kwargs["qid"]=qid
     kwargs["ItemFreqEachRank"]=q_ItemFreqEachRank
-    ranking=get_ranking(qRel,qExpVector,cacheLists=cacheLists,data=dataSplit.decomps[qid],\
+    ranking=get_ranking(qRel,qExpVector,cacheLists=cacheLists,dataSplit=dataSplit,\
       queryFreq=dataSplit.query_freq[qid],**kwargs)
     return ranking
 def simClickForDatasplit(qid,dataSplit,ranking,positionBias,clickRNG,**kwargs):
@@ -553,8 +555,22 @@ def MMF(ItemAverageRele,ItemFreqEachRank,positionBias,rankListLength,fairness_tr
     # unique, counts = np.unique(ranking, return_counts=True)
     # assert unique.shape[0]==ranking.shape[0],"there should not be repeated items"
     return ranking
+
+
+def PLFairRanking(model,q_feat,q_cutoff=5):
+    q_tf_scores = model(q_feat)
+
+    q_np_scores = q_tf_scores.numpy()[:,0]
+
+    sampled_rankings = pl.gumbel_sample_rankings(
+                                    q_np_scores,
+                                    1,
+                                    cutoff=q_cutoff)[0][0]
+    return sampled_rankings
+
+    
 def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,exploration_strategy,exploration_tradeoff_param,\
-  rankListLength,n_futureSession=None,positionBias=None,cacheLists=[],queryFreq=0,data=None,**kwargs):
+  rankListLength,n_futureSession=None,positionBias=None,cacheLists=[],queryFreq=0,dataSplit=None,**kwargs):
 
     num_item=qRel.shape[0]
     if fairness_strategy in ["FairCo",'FairCo_multip.',"GradFair","FairCo_maxnorm"]:
@@ -597,15 +613,22 @@ def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,explor
     elif fairness_strategy == "Topk":
       RankingScore=qRel
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)
+    elif fairness_strategy == "PLFair":
+      if dataSplit.PLFairModel is None or dataSplit.query_freq.sum()%n_futureSession==0:
+        dataSplit.PLFairModel=PLFairTrain.TrainPLFairModel(dataSplit,positionBias,rankListLength=5,fairness_tradeoff_param=fairness_tradeoff_param)
+      qid=kwargs["qid"]
+      q_feat = dataSplit.query_feat(qid)
+      ranking=PLFairRanking(dataSplit.PLFairModel,q_feat,q_cutoff=rankListLength)
     elif fairness_strategy == "ILP":
       ranking=ILP(positionBias,qRel,qExpVector,queryFreq,rankListLength,fairness_tradeoff_param)
     elif fairness_strategy == "LP":
       positionBiasAllItem=np.zeros(num_item)
       positionBiasAllItem[:rankListLength]=positionBias
+      qidDecomps=dataSplit.decomps[qid]
       if queryFreq%n_futureSession==0:
         decomp=LP(positionBiasAllItem,qRel,ind_fair=True, group_fair=False, debug=False,\
           w_fair =fairness_tradeoff_param, group_click_rel = None, impact=False, LP_COMPENSATE_W=None)
-        data.decomp=decomp
-      ranking=sampleFromLp(data.decomp)
+        qidDecomps.decomp=decomp
+      ranking=sampleFromLp(qidDecomps.decomp)
       ranking=ranking[:rankListLength]
     return ranking

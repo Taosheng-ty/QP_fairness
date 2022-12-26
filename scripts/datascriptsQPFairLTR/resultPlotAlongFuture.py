@@ -1,7 +1,14 @@
 import sys
 import os
 import pandas as pd
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import matplotlib
+font = {'family' : 'normal',
+#         'weight' : 'bold',
+        'size'   : 14}
+
+matplotlib.rc('font', **font)
+
 import matplotlib.ticker as mticker
 sys.path.append("/home/taoyang/research/Tao_lib/BEL/src/BatchExpLaunch")
 import results_org as results_org
@@ -59,17 +66,18 @@ for positionBiasSeverity in positionBiasSeverities:
             continue
         result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         # result_validated["QP"]=results_org.getGrandchildNode(result["fairness_strategy_QPfairNDCG"],"fairness_tradeoff_param_1.0")
-        result_validated["QPFair"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"],"fairness_tradeoff_param_1.0")
-        result_validated["QPFair-Horiz"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."],"fairness_tradeoff_param_1.0")
-        result_validated["QPFair"]=results_org.getGrandchildNode(result_validated["QPFair"],"exploration_tradeoff_param_0.0")
-        result_validated["QPFair-Horiz"]=results_org.getGrandchildNode(result_validated["QPFair-Horiz"],"exploration_tradeoff_param_0.0")         
+        result_validated["FARA"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"],"fairness_tradeoff_param_1.0")
+        result_validated["FARA-Horiz"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."],"fairness_tradeoff_param_1.0")
+        result_validated["FARA"]=results_org.getGrandchildNode(result_validated["FARA"],"exploration_tradeoff_param_0.0")
+        result_validated["FARA-Horiz"]=results_org.getGrandchildNode(result_validated["FARA-Horiz"],"exploration_tradeoff_param_0.0")         
         # result_validated["QPfairQuota"]=results_org.getGrandchildNode(result["fairness_strategy_QPfair"],"fairness_tradeoff_param_1.0")
 
         for ind,metrics in enumerate(metric_name):
+            # fig, axs = plt.subplots(figsize=(6.4,2.4))
             fig, axs = plt.subplots()
             results_org.paramIterationPlot(result_validated, metrics,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics])
-            axs.set_xlabel("The number of future sessions to consider.")
+            axs.set_xlabel("The number of planning sessions, $\Delta T$ .")
             # axs.set_title(data_name_cur)
             axs.set_xscale("log")
             axs.xaxis.set_major_formatter(mticker.ScalarFormatter())
@@ -77,6 +85,10 @@ for positionBiasSeverity in positionBiasSeverities:
             axs.xaxis.get_major_formatter().set_useOffset(False)
             # axs[0].set_yscale("symlog")
             # axs.legend(bbox_to_anchor=(1.1, 1.05))    
+            if "dispa" in metrics:
+                axs.set_ylim(9000,9250)
+#             for line in axs.lines:
+#                 line.set_marker(None)
             axs.legend()
             fig.savefig(os.path.join(OutputPath,metrics+positionBiasSeverity+data_name_cur+"performance_along_futureQP.pdf"), dpi=600, bbox_inches = 'tight', pad_inches = 0.05)
             plt.close(fig)

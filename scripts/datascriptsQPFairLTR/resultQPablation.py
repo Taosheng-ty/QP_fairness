@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib
 font = {'family' : 'normal',
-        'size'   : 12}
+        'size'   : 14}
 
 matplotlib.rc('font', **font)
 import config
@@ -88,9 +88,9 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validated["QPFair-Horiz."]=result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"]
         # result_validated["QPFair (Ours)"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_5")
         # result_validated["QPFair-Horiz."]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_5")
-        result_validated["QPFair"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_10")
+        result_validated["FARA"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_10")
         # result_validated["QPFair-Horiz."]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_10")
-        result_validated["QPFair w/o Exploration"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
+        result_validated["FARA w/o Exploration"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair"]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
         # result_validated["QPFair-Horiz.w/o Expl"]=results_org.getGrandchildNode(result["fairness_strategy_QPFair-Horiz."]["n_futureSession_100"],"exploration_tradeoff_param_0.0")
         result_validated=results_org.reorderDict(result_validated,config.desiredGradFair)
   
@@ -100,7 +100,8 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
         # result_validatedScatter["ExploreK"]=result["fairness_strategy_ExploreK"]
         for ind,metrics in enumerate(metric_name):
-            fig, axs = plt.subplots(figsize=(6.4,2.4))
+#             fig, axs = plt.subplots(figsize=(6.4,2.4))
+            fig, axs = plt.subplots()
             results_org.RequirementPlot(result_validated, metrics,ax=axs,step=step)
             # results_org.TradeoffScatter(result_validatedScatter, metrics,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])

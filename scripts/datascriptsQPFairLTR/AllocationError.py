@@ -31,6 +31,7 @@ if __name__ == '__main__':
                         help="Path to result logs")
     parser.add_argument("--dataset_name", type=str,
                         default="MQ2008",
+#                         default="MSLR-WEB10k",
                         help="Name of dataset to sample from.")
     parser.add_argument("--dataset_info_path", type=str,
                         default="LTRlocal_dataset_info.txt",
@@ -134,16 +135,18 @@ if __name__ == '__main__':
         with open(SavePath, 'wb') as f:
             pickle.dump(ErrDict, f)
 
-    fig, ax = plt.subplots(figsize=(6.4,2.4))
-    for key,value in ErrDict.items():
+    fig, ax = plt.subplots()
+    keysList=['Vertical_MAE','Horizontal_MAE']
+    for key in keysList:
         if "_MAE" not in key:
             continue
+        value=ErrDict[key]
         key=key.split("_")[0]
         plt.plot(n_futureSessions,value,label=key)
     # plt.plot(n_futureSessions,MAError_max1,label="Sto")
     # plt.plot(n_futureSessions,MAError_max2,)
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y))) 
-    ax.set_xlabel("The number of planning session.")
+    ax.set_xlabel("The number of planning sessions, $\Delta T$ .")
     ax.set_ylabel("Allocation Error")
     # ax.set_title("Error of exposure by vertical allocation")
     # axs[ind].set_xscale("log")

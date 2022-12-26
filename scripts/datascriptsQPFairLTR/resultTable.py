@@ -45,7 +45,7 @@ path_root="localOutput/Apr252022LTR_small/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
-# path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
+path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
 # path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
 # path_root="localOutput/Apr252022LTR_more/relvance_strategy_EstimatedAverage"
 
@@ -71,6 +71,8 @@ for positionBiasSeverity in positionBiasSeverities:
             result_validated["FairK"]=result["fairness_strategy_FairK"]
 #             result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
             result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_0.0"]
+            result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
+            result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             # result_validated["GradFair"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             # result_validated["FairCo_explore-1"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]
             # result_validated["FairCo_average_explore-1"]=result["fairness_strategy_FairCo_average"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_1"]

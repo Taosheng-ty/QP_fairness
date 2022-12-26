@@ -1,18 +1,12 @@
-# Copyright (C) H.R. Oosterhuis 2020.
+# -*- coding: utf-8 -*-
+# Copyright (C) H.R. Oosterhuis 2021.
 # Distributed under the MIT License (see the accompanying README.md and LICENSE files).
 
-import sharedmem
 import numpy as np
 import os.path
 import gc
 import json
-from argparse import Namespace
-import time
-from progressbar import progressbar
-import pandas as pd
-import gc
-import unittest
-from collections import defaultdict
+
 FOLDDATA_WRITE_VERSION = 4
 
 def _add_zero_to_vector(vector):
@@ -24,31 +18,25 @@ def get_dataset_from_json_info(
                 store_pickle_after_read = True,
                 read_from_pickle = True,
                 feature_normalization = True,
-                purge_test_set = True,
-                shared_resource = False,
-                relvance_strategy=None):
+                purge_test_set = True):
   with open(info_path) as f:
     all_info = json.load(f)
   assert dataset_name in all_info, 'Dataset: %s not found in info file: %s' % (dataset_name, all_info.keys())
 
   set_info = all_info[dataset_name]
   assert set_info['num_folds'] == len(set_info['fold_paths']), 'Missing fold paths for %s' % dataset_name
-#   print(all_info)
+
   if feature_normalization:
     num_feat = set_info['num_unique_feat']
   else:
     num_feat = set_info['num_nonzero_feat']
-  if "feature_filter_dim" in set_info.keys():
-    feature_filter_dim=set_info["feature_filter_dim"]
-  else:
-    feature_filter_dim=[]
+
   return DataSet(dataset_name,
                  set_info['fold_paths'],
                  set_info['num_relevance_labels'],
                  num_feat,
                  set_info['num_nonzero_feat'],
-                 already_normalized=set_info['query_normalized'],
-                 feature_filter_dim=feature_filter_dim
+                 already_normalized=set_info['query_normalized']
                 )
 
 class DataSet(object):
@@ -66,11 +54,8 @@ class DataSet(object):
                read_from_pickle = True,
                feature_normalization = True,
                purge_test_set = True,
-               shared_resource = False,
-               already_normalized=False,
-              feature_filter_dim=[]):
+               already_normalized=False):
     self.name = name
-    self.feature_filter_dim=feature_filter_dim
     self.num_rel_labels = num_rel_labels
     self.num_features = num_features
     self.data_paths = data_paths
@@ -78,107 +63,44 @@ class DataSet(object):
     self.read_from_pickle = read_from_pickle
     self.feature_normalization = feature_normalization
     self.purge_test_set = purge_test_set
-    self.shared_resource = shared_resource
     self._num_nonzero_feat = num_nonzero_feat
-    self._num_nonzero_feat = num_nonzero_feat
+
   def num_folds(self):
     return len(self.data_paths)
     
   def get_data_folds(self):
     return [DataFold(self, i, path) for i, path in enumerate(self.data_paths)]
-class decoms:
-  def __init__(self):
-    self.decomp=None
-
 
 class DataFoldSplit(object):
-  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector,queryLeastLength=0,rankListLength=5, relvance_strategy=None):
+  def __init__(self, datafold, name, doclist_ranges, feature_matrix, label_vector):
     self.datafold = datafold
     self.name = name
     self.doclist_ranges = doclist_ranges
     self.feature_matrix = feature_matrix
     self.label_vector = label_vector
-    self.queriesList=self.filtered_query_sizes(queryLeastLength)
-    self.exposure=np.zeros_like(label_vector).astype(np.float64)
-    self.query_freq=np.zeros(self.num_queries_orig())
-    self.cacheLists=defaultdict(list)
-    self.docFreq=np.zeros_like(label_vector)
-    self.weightedClicksAver=np.zeros_like(label_vector).astype(np.float64)
-    self.ClickSum=np.zeros_like(label_vector).astype(np.float64)
-    self.relvance_strategy=relvance_strategy
-    self.decomps=defaultdict(decoms)
-    self.PLFairModel=None
-    self.n_doc=label_vector.shape[0]
-    self.rankListLength=rankListLength
-    self.ItemFreqEachRank=np.zeros(shape=(self.n_doc,rankListLength)).astype(np.float64)
-  def set_rankListLength(self,rankListLength):
-    self.rankListLength=rankListLength
-    self.ItemFreqEachRank=np.zeros(shape=(self.n_doc,rankListLength)).astype(np.float64)
-  def set_relvance_strategy(self,relvance_strategy):
-    self.relvance_strategy=relvance_strategy
-  def voidFeature(self):
-    self.feature_matrix=np.zeros(1)
-  def updateStatistics(self,qid,clicks,ranking,positionBias):
-    self.query_freq[qid]+=1
-    q_docFreq=self.query_values_from_vector(qid,self.docFreq)
-    q_ItemFreqEachRank=self.query_values_from_vector(qid,self.ItemFreqEachRank)
-    exposure=self.query_values_from_vector(qid,self.exposure)
-    ClickSum=self.query_values_from_vector(qid,self.ClickSum)
-    weightedClicksAver=self.query_values_from_vector(qid,self.weightedClicksAver)
-    indArange=np.arange(ranking.shape[0])
-    np.add.at(q_ItemFreqEachRank,[ranking,indArange],1)
-    np.add.at(q_docFreq,ranking,1)
-    np.add.at(exposure,ranking,positionBias)
-    np.add.at(ClickSum,ranking,clicks)
-    # np.add.at(self.weightClicksSum,ranking,clicks/positionBias)
-    weightedClicksAver[:]=ClickSum/(np.clip(exposure,1e-5,np.inf))
-  def getEstimatedAverageRelevance(self,userFeature=None):
-      if self.relvance_strategy=="TrueAverage":
-          return self.label_vector
-      elif self.relvance_strategy=="EstimatedAverage":
-          return self.weightedClicksAver
-      else:
-          raise 
-  def num_queries_orig(self):
-    return self.doclist_ranges.shape[0] -1
+
   def num_queries(self):
-    return len(self.queriesList)
+    return self.doclist_ranges.shape[0] - 1
+
   def num_docs(self):
-    return self.label_vector.shape[0]
+    return self.feature_matrix.shape[0]
 
   def query_values_from_vector(self, qid, vector):
     s_i, e_i = self.query_range(qid)
     return vector[s_i:e_i]
- 
+
   def query_range(self, query_index):
     s_i = self.doclist_ranges[query_index]
     e_i = self.doclist_ranges[query_index+1]
     return s_i, e_i
-  def get_subset_doc_ids(self,q_ids):
-      doc_ids=[]
-      for query_id in q_ids:
-          s_i, e_i=self.query_range(query_id)
-          doc_ids.append(list(range(s_i,e_i)))
-      doc_ids=np.concatenate(doc_ids)
-      return doc_ids
+
   def query_size(self, query_index):
     s_i = self.doclist_ranges[query_index]
     e_i = self.doclist_ranges[query_index+1]
     return e_i - s_i
-  def global2local(self,q_ids,global_ids):
-        q_ids=np.array(q_ids)
-        s_is=self.doclist_ranges[q_ids]
-        local_ids=global_ids-s_is[:,None]
-        return local_ids
 
   def query_sizes(self):
     return (self.doclist_ranges[1:] - self.doclist_ranges[:-1])
-
-  def filtered_query_sizes(self,queryLeastLength,queryMaximumLength=np.inf):
-    selected_query=np.where(np.logical_and(self.query_sizes()>queryLeastLength , self.query_sizes()<queryMaximumLength) )[0]
-    self.queriesList=selected_query
-    print("number of query in data split",len(selected_query),flush=True)
-    return self.queriesList
 
   def max_query_size(self):
     return np.amax(self.query_sizes())
@@ -221,9 +143,8 @@ class DataFold(object):
     self.read_from_pickle = dataset.read_from_pickle
     self.feature_normalization = dataset.feature_normalization
     self.purge_test_set = dataset.purge_test_set
-    self.shared_resource = dataset.shared_resource
     self._num_nonzero_feat = dataset._num_nonzero_feat
-    self.feature_filter_dim=dataset.feature_filter_dim
+
   def max_query_size(self):
     return np.amax((
         self.train.max_query_size(),
@@ -241,18 +162,6 @@ class DataFold(object):
     self._data_ready = False
     gc.collect()
 
-  def _make_shared(self, numpy_matrix):
-    """
-    Avoids the copying of Read-Only shared memory.
-    """
-    if self._data_args.n_processing == 1:
-      return numpy_matrix
-    if numpy_matrix is None:
-      return None
-    shared = sharedmem.empty(numpy_matrix.shape, dtype=numpy_matrix.dtype)
-    shared[:] = numpy_matrix[:]
-    return shared
-
   def _read_file(self, path, feat_map, purge):
     '''
     Read letor file.
@@ -261,10 +170,8 @@ class DataFold(object):
     cur_docs = []
     cur_labels = []
     current_qid = None
-    print("preprocessing ",path)
-    with open(path,"r") as f:
-      content = f.readlines()
-    for line in progressbar(content):
+
+    for line in open(path, 'r'):
       info = line[:line.find('#')].split()
       qid = info[1].split(':')[1]
       label = int(info[0])
@@ -297,9 +204,6 @@ class DataFold(object):
       doc_feat = np.zeros(self._num_nonzero_feat)
       for pair in feat_pairs:
         feat_id, feature = pair.split(':')
-        if int(feat_id) in self.feature_filter_dim:
-            continue
-        
         feat_id = int(feat_id)
         feat_value = float(feature)
         if feat_id not in feat_map:
@@ -376,7 +280,6 @@ class DataFold(object):
         test_doclist_ranges  = loaded_data['test_doclist_ranges']
         test_label_vector    = loaded_data['test_label_vector']
         data_read = True
-        print("load existing datasets")
       del loaded_data
 
     if not data_read:
@@ -443,16 +346,6 @@ class DataFold(object):
                 test_doclist_ranges  = test_doclist_ranges,
                 test_label_vector    = test_label_vector,
               )
-    if self.shared_resource:
-      train_feature_matrix = _make_shared(train_feature_matrix)
-      train_doclist_ranges = _make_shared(train_doclist_ranges)
-      train_label_vector   = _make_shared(train_label_vector)
-      valid_feature_matrix = _make_shared(valid_feature_matrix)
-      valid_doclist_ranges = _make_shared(valid_doclist_ranges)
-      valid_label_vector   = _make_shared(valid_label_vector)
-      test_feature_matrix  = _make_shared(test_feature_matrix)
-      test_doclist_ranges  = _make_shared(test_doclist_ranges)
-      test_label_vector    = _make_shared(test_label_vector)
 
     n_feat = len(feature_map)
     assert n_feat == self.num_features, '%d features found but %d expected' % (n_feat, self.num_features)
@@ -475,81 +368,3 @@ class DataFold(object):
                                test_feature_matrix,
                                test_label_vector)
     self._data_ready = True
-
-def expRelConvert(label,epsilon=0.1):
-  """
-  This function converts relevance degree from integer number  [0,1,2,...,], to fraction.
-  """
-  maxLabel=np.max(label)
-  label=epsilon+(1-epsilon)*(2**label-1)/(2**maxLabel-1)
-  return label
-def get_data(dataset,dataset_info_path,fold_id,query_least_size=0,queryMaximumLength=np.inf,\
-  relvance_strategy="TrueAverage",voidFeature=True,RelConvertfcn=expRelConvert, rankListLength=5,):
-    data = get_dataset_from_json_info(
-                  dataset,
-                  dataset_info_path,
-                  shared_resource = False,
-                  relvance_strategy=relvance_strategy
-                )
-    fold_id = (fold_id-1)%data.num_folds()
-    data = data.get_data_folds()[fold_id]
-    data.read_data()
-    for data_split in [data.test,data.train,data.validation]:
-      data_split.filtered_query_sizes(query_least_size,queryMaximumLength)
-      data_split.set_relvance_strategy(relvance_strategy)
-      data_split.set_rankListLength(rankListLength)
-      if voidFeature:
-        data_split.voidFeature()
-      data_split.label_vector=RelConvertfcn(data_split.label_vector)
-    for data_split in [data.train,data.validation]:
-      data_split.voidFeature()  ## void them since they are not used.
-    return data
-def get_query_aver_length(data):
-    total_docs=data.train.num_docs()+\
-                data.validation.num_docs()
-                # data.test.num_docs()+\
-                
-    total_queries=data.train.num_queries()+\
-                  data.validation.num_queries()
-                # data.test.num_queries()+\
-    return int(total_docs/total_queries)
-    # print(total_queries)
-
-def get_data_stat(data,query_least_size=5):
-    data.train.filtered_query_sizes(query_least_size)
-    data.validation.filtered_query_sizes(query_least_size)
-    data.test.filtered_query_sizes(query_least_size)
-    total_queries=len(data.train.get_filtered_queries())+\
-                len(data.test.get_filtered_queries())+\
-                len(data.validation.get_filtered_queries())
-    total_docs =np.sum(data.train.query_sizes()[data.train.get_filtered_queries()])+\
-                np.sum(data.test.query_sizes()[data.test.get_filtered_queries()])+\
-                np.sum(data.validation.query_sizes()[data.validation.get_filtered_queries()])
-    feature=data.train.feature_matrix.shape[-1]
-    average_num_doc=np.int(np.round(total_docs/total_queries))
-    total_irrelevant_docs_orig =np.sum(data.train.label_vector==0)+\
-      np.sum(data.test.label_vector==0)+\
-        np.sum(data.test.label_vector==0)
-    total_docs_orig =data.train.num_docs()+data.validation.num_docs()+data.test.num_docs()
-    irrelevant_ratio= total_irrelevant_docs_orig/total_docs_orig   
-    return [total_queries,average_num_doc,feature,total_docs,irrelevant_ratio]
-def get_mutiple_data_statics(data_name_list=[]):
-    stas_list=[]
-    for data_name in data_name_list:
-        data_setting={"dataset_info_path":"local_dataset_info.txt",
-                 "dataset":data_name,
-                 "fold_id":1 }
-        data=get_data(**data_setting)
-        stats=get_data_stat(data)
-        stas_list.append(stats)
-    df = pd.DataFrame(stas_list,index=data_name_list,columns=["# Queries","# Average documents","# Unique feature","# Total documents","IrrelevantRatio"])
-    return df
-
-
-
-def clip(value_list,low=0.05,high=0.95):
-    result_list=[]
-    for value in value_list:
-        result_list.append(np.clip(value,low,high))
-    return result_list
-    
