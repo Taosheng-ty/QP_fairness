@@ -23,11 +23,11 @@ data_rename={
             # "istella-s":"istella-s"
             "MQ2008":"MQ2008",
             # "MQ2007":"MQ2007",
-#             "istella-s":"ist"
+            "istella-s":"ist"
 }
 metric_name=['test_NDCG_1_aver','test_NDCG_3_aver','test_NDCG_5_aver',"test_disparity","time1kLists"]
 metric_name=['test_NDCG_1_cumu','test_NDCG_3_cumu','test_NDCG_5_cumu',"test_disparity","time1kLists"]
-metric_name=["test_disparity","time1kLists"]
+# metric_name=["test_disparity","time1kLists"]
 metric_name_dict={"discounted_sum_test_ndcg":"Cum-NDCG","test_fairness":"bfairness","average_sum_test_ndcg":"average_cum_ndcg",\
     'f1_test_rel_fair':'crf-f1',"neg_test_exposure_disparity_not_divide_qfreq":"cnegdisparity",\
         'test_exposure_disparity_not_divide_qfreq':"Disparity"}
@@ -46,6 +46,7 @@ path_root="localOutput/QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
+path_root="localOutput/Jan252023QPFairLTRistella/relvance_strategy_TrueAverage"
 # path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
 # path_root="localOutput/Apr252022LTR_more/relvance_strategy_EstimatedAverage"
 
@@ -62,15 +63,15 @@ for positionBiasSeverity in positionBiasSeverities:
             if not os.path.isdir(resultPath):
                 # print(path)       
                 continue
-            result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
+            # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
             result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
             results_org.iterate_applyfunction(result,cal_timeFor1kLists)
             # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
             result_validated["Topk"]=result["fairness_strategy_Topk"]
             result_validated["Randomk"]=result["fairness_strategy_Randomk"]
-            result_validated["FairK"]=result["fairness_strategy_FairK"]
+            # result_validated["FairK"]=result["fairness_strategy_FairK"]
 #             result_validated["ExploreK"]=result["fairness_strategy_ExploreK"]
-            result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1"]["exploration_tradeoff_param_0.0"]
+            result_validated["FairCo"]=result["fairness_strategy_FairCo"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]
             result_validated["MMF"]=result["fairness_strategy_MMF"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             result_validated["PLFair"]=result["fairness_strategy_PLFair"]["n_futureSession_10000000"]["fairness_tradeoff_param_1.0"]["exploration_tradeoff_param_0.0"]
             # result_validated["GradFair"]=result["fairness_strategy_GradFair"]["fairness_tradeoff_param_1000"]["exploration_tradeoff_param_0.0"]

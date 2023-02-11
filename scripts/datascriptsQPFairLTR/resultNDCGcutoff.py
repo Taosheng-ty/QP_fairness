@@ -7,9 +7,9 @@ import results_org as results_org
 import config
 import matplotlib.pyplot as plt 
 import matplotlib
-font = {'family' : 'normal',
-        'size'   : 14}
-
+import numpy as np
+plt.rcParams['pdf.fonttype']=42
+font = {'size'   : 16}
 matplotlib.rc('font', **font)
 # import BatchExpLaunch.s as tools
 scriptPath=os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +39,7 @@ path_root="localOutput/QPFairLTRistella/relvance_strategy_TrueAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_TrueAverage"
-path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
+# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_TrueAverage"
 step=19  
 
 # xMQfunctions=results_org.setScaleFunction(a=203,b=1,low=False)
@@ -65,6 +65,7 @@ data_rename={
             # "istella-s":"ist",
 }
 # path_root="localOutput/Mar292022Data20Docs/relvance_strategy_EstimatedAverage"
+yticks={"MQ2008":[100,170,200],"MSLR10k":[70,100,200]}
 for positionBiasSeverity in positionBiasSeverities:
     
     OutputPath=os.path.join(path_root,"result")
@@ -136,14 +137,14 @@ for positionBiasSeverity in positionBiasSeverities:
         # ax.set_yscale("log")
         # ax.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
         ax.set_yscale("function",functions=yscaleFcn[data_name_cur])       
-        ax.set_ylim(60,y_lim[data_name_cur])
+        ax.set_ylim(65,y_lim[data_name_cur])
         legend,handles,labels=results_org.reorderLegend(config.desiredGradFair,ax,returnHandles=True)
         # legend.nrow=2
         # ax.legend(handles,labels,bbox_to_anchor=(1, 0.5), loc="center left")
         legend = ax.legend(handles, labels, loc=3,ncol=5, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
         results_org.export_legend(legend,OutputPath+'legendNDCGcutoff.pdf')
         legend.remove()
-        plt.locator_params(axis='y', nbins=4)
+        ax.set_yticks(ticks=yticks[data_name_cur])
         # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         # ax.legend()
         os.makedirs(OutputPath, exist_ok=True)

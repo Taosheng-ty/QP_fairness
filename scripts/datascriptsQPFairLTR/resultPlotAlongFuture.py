@@ -3,10 +3,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
-font = {'family' : 'normal',
-#         'weight' : 'bold',
-        'size'   : 14}
-
+import numpy as np
+plt.rcParams['pdf.fonttype']=42
+font = {'size'   : 20}
 matplotlib.rc('font', **font)
 
 import matplotlib.ticker as mticker
@@ -38,7 +37,7 @@ data_rename={
 }
 metric_name=['test_NDCG_1_aver','test_NDCG_3_aver','test_NDCG_5_aver','test_NDCG_1_cumu','test_NDCG_3_cumu','test_NDCG_5_cumu',"test_disparity"]
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness"}
+    "test_NDCG_1_cumu":"cNDCG","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5","test_disparity":"Unfairness"}
 result_list=[]
 
 result_path=os.path.join(path_root,"result")
@@ -76,6 +75,9 @@ for positionBiasSeverity in positionBiasSeverities:
             # fig, axs = plt.subplots(figsize=(6.4,2.4))
             fig, axs = plt.subplots()
             results_org.paramIterationPlot(result_validated, metrics,ax=axs,step=step)
+            for line in axs.lines:
+#                 line.set_marker(None)
+                line.set_linewidth(2.5)
             axs.set_ylabel(metric_name_dict[metrics])
             axs.set_xlabel("The number of planning sessions, $\Delta T$ .")
             # axs.set_title(data_name_cur)
@@ -83,6 +85,7 @@ for positionBiasSeverity in positionBiasSeverities:
             axs.xaxis.set_major_formatter(mticker.ScalarFormatter())
             axs.xaxis.get_major_formatter().set_scientific(False)
             axs.xaxis.get_major_formatter().set_useOffset(False)
+            plt.locator_params(axis='y', nbins=6) 
             # axs[0].set_yscale("symlog")
             # axs.legend(bbox_to_anchor=(1.1, 1.05))    
             if "dispa" in metrics:

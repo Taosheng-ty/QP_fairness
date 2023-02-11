@@ -3,9 +3,9 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt 
 import matplotlib
-font = {'family' : 'normal',
-        'size'   : 14}
-
+import numpy as np
+plt.rcParams['pdf.fonttype']=42
+font = {'size'   : 24}
 matplotlib.rc('font', **font)
 import config
 from matplotlib import scale
@@ -25,7 +25,8 @@ path_root="localOutput/QPFairLTR/relvance_strategy_EstimatedAverage"
 # path_root="localOutput/QPFairLTRistella/relvance_strategy_EstimatedAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_EstimatedAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_EstimatedAverage"
-path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_EstimatedAverage"
+# path_root="localOutput/Jan252023QPFairLTRistella/relvance_strategy_EstimatedAverage"
+# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_EstimatedAverage"
 step=19  
 data_rename={            
             # "Movie":"Movie",\
@@ -33,7 +34,7 @@ data_rename={
             # "MSLR-WEB30k":"MSLR-WEB30k",\
             "MSLR-WEB10k":"MSLR10k",\
             # "Webscope_C14_Set1":"Webscope_C14_Set1",\
-            # "istella-s":"istella-s"，
+            "istella-s":"istella-s",
             "MQ2008":"MQ2008",
             # "MQ2007":"MQ2007",
             # "istella-s":"ist",
@@ -46,27 +47,38 @@ metric_name=[["test_disparity",'test_NDCG_1_cumu'],["test_disparity",'test_NDCG_
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
 
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
-    "test_NDCG_1_cumu":"cNDCG@1","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5",\
+    "test_NDCG_1_cumu":"cNDCG","test_NDCG_3_cumu":"cNDCG@3","test_NDCG_5_cumu":"cNDCG@5",\
                   "test_disparity":"Unfairness tolerance"}
 result_list=[]
 yMQfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
 yIsfunctions=results_org.setScaleFunction(a=210,b=1,low=False)
 
 xMQfunctions=results_org.setScaleFunction(a=10,b=1,low=True)
+xISfunctions=results_org.setScaleFunction(a=5,b=1,low=True)
 # xMQfunctions=results_org.setScaleFunction(a=2.2*10**5,b=1,low=False)
 eye=[lambda x:x, lambda x:x]
 # xMQfunctions=results_org.setScaleFunction(a=-3,b=1,low=True)
 # xIsfunctions=[lambda x: np.log(np.log(210-x)), lambda x:210-np.exp(np.exp(x))]
 # yscaleFcn={"MQ2008":yMQfunctions,"MSLR10k":yIsfunctions}
 # xscaleFcn={"MQ2008":xMQfunctions,"MSLR10k":xIsfunctions}
-yscaleFcn={"MQ2008":eye,"MSLR10k":eye}
-xscaleFcn={"MQ2008":eye,"MSLR10k":xMQfunctions}
+trO=lambda x:scale.SymmetricalLogTransform(base=10,linthresh=7,linscale=10).transform_non_affine(x-188)
+intr=lambda x:188+scale.SymmetricalLogTransform(base=10,linthresh=7,linscale=10).transform_non_affine(x)
+MQ2008Yaffine=[trO,intr]
+trOX=lambda x:scale.SymmetricalLogTransform(base=10,linthresh=5000,linscale=3).transform_non_affine(x-20000)
+intrX=lambda x:20000+scale.SymmetricalLogTransform(base=10,linthresh=5000,linscale=3).transform_non_affine(x)
+MQ2008Xaffine=[trOX,intrX]
+logscale=[lambda x: np.log(x-9000),lambda x: np.exp(x)+9000]
+yscaleFcn={"MQ2008":MQ2008Yaffine,"MSLR10k":eye,"istella-s":eye}
+xscaleFcn={"MQ2008":MQ2008Xaffine,"MSLR10k":xMQfunctions,"istella-s":xISfunctions}
 xLimi={"MQ2008test_NDCG_1_cumu":[13100, 18000, 191, 201],"MQ2008test_NDCG_3_cumu":[13300, 26000, 185, 201],"MQ2008test_NDCG_5_cumu":[13300, 26000, 185, 201]}
+ylimit={"MQ2008":[20,210]}
 positionBiasSeverities=[
     # "positionBiasSeverity_0",
     "positionBiasSeverity_1",
     # "positionBiasSeverity_2"
     ]
+xticks={"MQ2008":[10000,20000,300000],"MSLR10k":[100,1000,5000],"istella-s":[10,100,1000]}
+yticks={"MQ2008":[150,190,200],"MSLR10k":[70,130,180],"istella-s":[50,100,200]}
 for positionBiasSeverity in positionBiasSeverities:
     OutputPath=os.path.join(path_root,"result")
     os.makedirs(OutputPath, exist_ok=True)
@@ -121,19 +133,20 @@ for positionBiasSeverity in positionBiasSeverities:
         # result_validatedScatter["FairK(Ours)"]=result["fairness_strategy_FairK"]
         # result_validatedScatter["ExploreK"]=result["fairness_strategy_ExploreK"]
         for ind,metrics in enumerate(metric_name):
-            fig, axs = plt.subplots()
+            # fig, axs = plt.subplots()
+            fig, axs = plt.subplots(figsize=(10,6))
             results_org.RequirementPlot(result_validated, metrics,\
                                         desiredColorDict=config.desiredGradFairColor,\
                                             desiredMarkerDict=config.desiredGradFairMarker,ax=axs,step=step)
             for line in axs.lines:
 #                 line.set_marker(None)
-                line.set_linewidth(1.5)
+                line.set_linewidth(2.5)
             results_org.TradeoffScatter(result_validatedScatter, metrics,\
                                         desiredColorDict=config.desiredGradFairColor,ax=axs,step=step)
             axs.set_ylabel(metric_name_dict[metrics[1]])
             axs.set_xlabel(metric_name_dict[metrics[0]])
 
-            if "MQ" in data_name_cur:
+            if "M1Q" in data_name_cur:
                 recPosition=[0.3, 0.4, 0.5, 0.4]
                 axins = axs.inset_axes(recPosition)
                 results_org.RequirementPlot(result_validated, metrics,\
@@ -145,12 +158,13 @@ for positionBiasSeverity in positionBiasSeverities:
                 axins.set_xlim(x1, x2)
                 axins.set_ylim(y1, y2)
                 axins.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
-                axs.indicate_inset_zoom(axins, edgecolor="black",alpha=0.3)
+                axs.indicate_inset_zoom(axins, edgecolor="black",alpha=1)
                 axins.set_xticklabels([])
                 axins.set_yticklabels([])
             # axs.set_title(data_name_cur)
+            
             axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
-            # axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
+            axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
             # axs.set_xscale("function",functions=xscaleFcn[data_name_cur]) 
             # axs.set_yscale("function",functions=yscaleFcn[data_name_cur]) 
             # if "MSLR" in data_name_cur:
@@ -161,7 +175,11 @@ for positionBiasSeverity in positionBiasSeverities:
             legend = axs.legend(handles, labels, loc=3,ncol=10, framealpha=1, frameon=True,bbox_to_anchor=(1.1, 1.05),columnspacing=0.5)
             results_org.export_legend(legend,resultpath+'legend.pdf')
             legend.remove()
-            plt.locator_params(axis='x', nbins=3)
+            # plt.locator_params(axis='x', nbins=3)
+            if data_name_cur in ylimit:
+                axs.set_ylim(ylimit[data_name_cur])
+            axs.set_xticks(ticks=xticks[data_name_cur])
+            axs.set_yticks(ticks=yticks[data_name_cur])
             # plt.locator_params(axis='y', nbins=4) 
             # axs.legend(bbox_to_anchor=(1.1, 1.05)) 
             # axs.legend()   
