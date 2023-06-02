@@ -37,98 +37,13 @@ desired_order_list=["relvance_strategy",'positionBiasSeverity',"dataset_name","f
 datasets=["MSLR-WEB10k"]
 dataset_dict={"istella-s":{"n_iteration":4*10**6,"queryMaximumLength":int(1e10)},\
         "MSLR-WEB10k":{"n_iteration":4*10**6,"queryMaximumLength":int(1e10)}}
-
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['PLFair'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
-              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4],"n_futureSession":[10000000]}
-write_setting(datasets,list_settings,settings_base)
-##write setting.json for Topk and Randomk
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
+list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'GradFair'],"fairness_tradeoff_param":[0.0,0.0001,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
               "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
-
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['FairCo'],"fairness_tradeoff_param":[0.0,0.0001,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
-              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
-
-
-##write setting.json for Topk and Randomk
-
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['Topk','Randomk',"FairK"],"random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
-
-##write setting.json for ILP and LP  only for MQ2008
-settings_base_LP=dict(settings_base)
-settings_base_LP["LogTimeEachStep"]="True"
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'ILP'],"fairness_tradeoff_param":[1.0],\
-               "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base_LP)
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'LP'],"fairness_tradeoff_param":[1000],\
-               "exploration_tradeoff_param":[0.0],"random_seed":[0],"n_futureSession":[100]}
-# settings_base_LP=dict(settings_base)
-# settings_base_LP["n_futureSession"]=200
-write_setting(datasets,list_settings,settings_base_LP) 
-
-##write setting.json for 'QPfair',"Hybrid","QPfairNDCG"
-
-# list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["QPFair","QPFair-Horiz."],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.85,0.9,0.92,0.95,0.98,1.0],\
-#                "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4],"n_futureSession":[2,5,10,20,50,100,200,500]}
-# write_setting(datasets,list_settings,settings_base)
-
-list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["QPFair","QPFair-Horiz."],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.85,0.9,0.92,0.95,0.98,1.0],\
-               "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4],"n_futureSession":[100]}
-write_setting(datasets,list_settings,settings_base)
-# list_settings={"relvance_strategy":["TrueAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["QPFair","QPFair-Horiz."],"fairness_tradeoff_param":[1.0],\
-#                "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4],"n_futureSession":[20,50,100,200,500]}
-# write_setting(datasets,list_settings,settings_base)
 
 
 
 #################### for in-processing
-
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['PLFair'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
-              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4],"n_futureSession":[int(dataset_dict["MSLR-WEB10k"]["n_iteration"]/10)]}
+list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['GradFair'],"fairness_tradeoff_param":[0.0,0.00001,0.0001,0.0005,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
+               "exploration_tradeoff_param":[1.0],"random_seed":[0,1,2,3,4]}
 write_setting(datasets,list_settings,settings_base)
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['MMF'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.9,1.0],\
-              "exploration_tradeoff_param":[0.0], "random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
-
-# list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'GradFair'],"fairness_tradeoff_param":[0.0,0.0001,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
-#                "exploration_tradeoff_param":[0.0,0.1,0.5,1,5,10,20,50,100],"random_seed":[0,1,2,3,4]}
-# write_setting(datasets,list_settings,settings_base)
-
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['FairCo'],"fairness_tradeoff_param":[0.0,0.00001,0.0001,0.0005,0.001,0.005,0.01,0.1,0.5,1,10,50,100,500,700,1000],\
-               "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
-
-# list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["onlyFairness"],"fairness_tradeoff_param":[1],\
-#                "exploration_tradeoff_param":[0.0,0.1,0.5,1,5,10,20,100,200,1000],"random_seed":[0,1,2,3,4]}
-# write_setting(datasets,list_settings,settings_base)
-
-##write setting.json for Topk and Randomk
-
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":['Topk','Randomk',"FairK"],"random_seed":[0,1,2,3,4]}
-write_setting(datasets,list_settings,settings_base)
-
-##write setting.json for ILP and LP  only for MQ2008
-# list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'ILP'],"fairness_tradeoff_param":[0.0,0.01,0.1,0.2,0.5,0.8,0.9,1.0],\
-#                "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4]}
-# write_setting(datasets,list_settings,settings_base) 
-
-# list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":[ 'LP'],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,1.0,2,10,50,80,100,500,1000],\
-#                "exploration_tradeoff_param":[0.0],"random_seed":[0,1,2,3,4],"n_futureSession":[100]}
-# # settings_base_LP=dict(settings_base)
-# settings_base_LP["n_futureSession"]=200
-# write_setting(datasets,list_settings,settings_base) 
-
-
-
-
-#write setting.json for 'QPfair',"Hybrid","QPfairNDCG" in realworld setting
-
-
-list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["QPFair","QPFair-Horiz."],"fairness_tradeoff_param":[0.0,0.01,0.05,0.1,0.2,0.5,0.8,0.85,0.9,0.92,0.95,0.98,1.0],\
-               "exploration_tradeoff_param":[0.0,10],"random_seed":[0,1,2,3,4],"n_futureSession":[100]}
-write_setting(datasets,list_settings,settings_base)
-# list_settings={"relvance_strategy":["EstimatedAverage"],'positionBiasSeverity':positionBiasSeverity,"fairness_strategy":["QPFair","QPFair-Horiz."],"fairness_tradeoff_param":[1.0],\
-#                "exploration_tradeoff_param":[0.0,10],"random_seed":[0,1,2,3,4],"n_futureSession":[20,50,100,200,500]}
-# write_setting(datasets,list_settings,settings_base)

@@ -6,6 +6,7 @@ import matplotlib
 import numpy as np
 plt.rcParams['pdf.fonttype']=42
 font = {'size'   : 24}
+plt.rcParams['lines.markersize']=10
 matplotlib.rc('font', **font)
 import config
 from matplotlib import scale
@@ -25,8 +26,8 @@ path_root="localOutput/QPFairLTR/relvance_strategy_EstimatedAverage"
 # path_root="localOutput/QPFairLTRistella/relvance_strategy_EstimatedAverage"
 path_root="localOutput/Apr30QPFairLTR/relvance_strategy_EstimatedAverage"
 path_root="localOutput/July3QPFairLTR/relvance_strategy_EstimatedAverage"
-# path_root="localOutput/Jan252023QPFairLTRistella/relvance_strategy_EstimatedAverage"
-# path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_EstimatedAverage"
+path_root="localOutput/Jan252023QPFairLTRistella/relvance_strategy_EstimatedAverage"
+path_root="localOutput/July3QPFairLTRMSLR/relvance_strategy_EstimatedAverage"
 step=19  
 data_rename={            
             # "Movie":"Movie",\
@@ -91,9 +92,10 @@ for positionBiasSeverity in positionBiasSeverities:
         if not os.path.isdir(resultPath):
             # print(path)       
             continue
-#         result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
+        # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
         result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]
+        
         # result_validated["FairCo_maxnorm"]=result["fairness_strategy_FairCo_maxnorm"]
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]
         # result_validated["LP_1"]=result["fairness_strategy_LP"]["n_futureSession_1"]
@@ -110,6 +112,8 @@ for positionBiasSeverity in positionBiasSeverities:
         result_validated["MMF"]=result["fairness_strategy_MMF"]
         for method in result_validated:
             result_validated[method]=results_org.getGrandchildNode(result_validated[method],"exploration_tradeoff_param_0.0")
+        result_validated["MCFair"]=results_org.getGrandchildNode(result["fairness_strategy_GradFair"],"exploration_tradeoff_param_1.0")
+        # result["fairness_strategy_GradFair"]["exploration_tradeoff_param_1.0"]
         # result_validated["QPfairNDCG_500"]=result["fairness_strategy_QPfairNDCG"]["n_futureSession_500"]
         # result_validated["QPfairNDCG_500Hori"]=result["fairness_strategy_QPfairNDCGHorizontal"]["n_futureSession_500"]
         # result_validated["GradFair(Ours)_0"]=results_org.getGrandchildNode(result["fairness_strategy_GradFair"],"exploration_tradeoff_param_0.0")        

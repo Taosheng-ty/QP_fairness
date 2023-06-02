@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt 
 import itertools
 desiredGradFair=["FARA(Ours)","FARA-Horiz.(Ours)","MMF","PLFair","FairK(Ours)","TopK","RandomK","ExploreK","FairCo","ILP","LP"]
-desiredGradFair=["FARA(Ours)","FARA-Horiz.(Ours)","MMF","PLFair","FairCo","ILP","LP","TopK","RandomK"]
+desiredGradFair=["FARA(Ours)","FARA-Horiz.(Ours)","MMF","PLFair","MCFair","FairCo","ILP","LP","TopK","RandomK"]
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors_list = prop_cycle.by_key()['color']
 colors=itertools.cycle(colors_list)

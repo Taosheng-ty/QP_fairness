@@ -9,6 +9,7 @@ font = {'size'   : 24}
 matplotlib.rc('font', **font)
 # matplotlib.rcParams['lines.linewidth'] = 5
 plt.rcParams['lines.linewidth'] = 3.0
+plt.rcParams['lines.markersize']=10
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 import config
@@ -52,7 +53,7 @@ metric_name=[["test_disparity",'test_NDCG_1_aver'],["test_disparity",'test_NDCG_
 metric_name=[["test_disparity",'test_NDCG_1_cumu'],["test_disparity",'test_NDCG_3_cumu'],\
     ["test_disparity",'test_NDCG_5_cumu']]
 # metric_name=[["disparity",'NDCG_3_aver'],["disparity",'NDCG_5_aver']]
-xticks={"MQ2008":[9500,15000,100000],"MSLR10k":[0,1000,5000],"istella-s":[0,100,1000]}
+xticks={"MQ2008":[10000,20000,100000],"MSLR10k":[0,1000,5000],"istella-s":[0,100,1000]}
 yticks={"MQ2008":[100,180,200]}
 ylimit={"MQ2008":[80,202]}
 metric_name_dict={"test_NDCG_1_aver":"NDCG@1","test_NDCG_3_aver":"NDCG@3","test_NDCG_5_aver":"NDCG@5",\
@@ -68,8 +69,8 @@ xIsfunctions=[lambda x:x, lambda x:x]
 logscale=[lambda x: np.log(x-9000),lambda x: np.exp(x)+9000]
 # yscaleFcn={"MQ2008":yMQfunctions,"MSLR10k":yIsfunctions}
 # xscaleFcn={"MQ2008":xMQfunctions,"MSLR10k":xIsfunctions}
-trO=lambda x:scale.SymmetricalLogTransform(base=10,linthresh=20,linscale=2).transform_non_affine(x-201)
-intr=lambda x:201+scale.SymmetricalLogTransform(base=10,linthresh=20,linscale=2).transform_non_affine(x)
+trO=lambda x:scale.SymmetricalLogTransform(base=10,linthresh=20,linscale=2).transform_non_affine(x-190)
+intr=lambda x:190+scale.SymmetricalLogTransform(base=10,linthresh=20,linscale=2).transform_non_affine(x)
 MQ2008Yaffine=[trO,intr]
 trOX=lambda x:scale.SymmetricalLogTransform(base=10,linthresh=10000,linscale=3).transform_non_affine(x-9800)
 intrX=lambda x:9800+scale.SymmetricalLogTransform(base=10,linthresh=10000,linscale=3).transform_non_affine(x)
@@ -106,6 +107,7 @@ for positionBiasSeverity in positionBiasSeverities:
         # result,result_mean=results_org.get_result_df(resultPath,groupby="iterations",rerun=True)
         result,result_mean=results_org.get_result_df(resultPath,groupby="iterations")
         result_validated["FairCo"]=result["fairness_strategy_FairCo"]
+        result_validated["MCFair"]=result["fairness_strategy_GradFair"]
         # result_validated["FairCo_maxnorm"]=result["fairness_strategy_FairCo_maxnorm"]
         # result_validated["FairCo_multip."]=result["fairness_strategy_FairCo_multip."]
         # result_validated["LP_1"]=result["fairness_strategy_LP"]["n_futureSession_1"]
