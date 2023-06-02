@@ -1,5 +1,0 @@
-{
-  "Movie": {
-    "dataFolder":"data/MovieData"},
-  "News": {
-    "dataFolder":"data/NewsData"}}
