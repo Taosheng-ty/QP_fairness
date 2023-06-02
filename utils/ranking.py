@@ -38,7 +38,7 @@ def unfairnessDoc(obs,relevance_esti_orig,fairness_strategy,**kwargs):
       unfairness = np.max(swap_reward-swap_reward.T,axis=0)
       unfairness=unfairness/(np.max(np.abs(unfairness))+1e-10)
 
-    elif fairness_strategy=="GradFair":
+    elif fairness_strategy=="MCFair":
       swap_reward = obs[:,None]*relevance_esti[None,:]
       q_result = np.sum((swap_reward-swap_reward.T)*relevance_esti[:,None],axis=0)/(doc_num*(doc_num-1))
       unfairness=q_result
@@ -573,13 +573,13 @@ def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,explor
   rankListLength,n_futureSession=None,positionBias=None,cacheLists=[],queryFreq=0,dataSplit=None,**kwargs):
 
     num_item=qRel.shape[0]
-    if fairness_strategy in ["FairCo",'FairCo_multip.',"GradFair","FairCo_maxnorm"]:
+    if fairness_strategy in ["FairCo",'FairCo_multip.',"MCFair","FairCo_maxnorm"]:
       Docunfairness=unfairnessDoc(qExpVector,qRel,fairness_strategy)
       Uncertainty=uncertaintyDoc(qExpVector,exploration_strategy)
       RankingScore=qRel+fairness_tradeoff_param*Docunfairness+exploration_tradeoff_param*Uncertainty
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)
     elif fairness_strategy in ["onlyFairness"]:
-      Docunfairness=unfairnessDoc(qExpVector,qRel,"GradFair")
+      Docunfairness=unfairnessDoc(qExpVector,qRel,"MCFair")
       Uncertainty=uncertaintyDoc(qExpVector,exploration_strategy)
       RankingScore=Docunfairness+exploration_tradeoff_param*Uncertainty
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)
@@ -587,11 +587,11 @@ def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,explor
     #   if len(cacheLists)<=0:
     #     cacheLists+=getFutureRankingQuota(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param)
     #   ranking=np.array(cacheLists.pop())
-    elif fairness_strategy in ["QPFair"]:
+    elif fairness_strategy in ["FARA"]:
       if len(cacheLists)<=0:
         cacheLists+=getFutureRankingNDCG(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param,exploration_tradeoff_param)
       ranking=np.array(cacheLists.pop())
-    elif fairness_strategy in ["QPFair-Horiz."]:
+    elif fairness_strategy in ["FARA-Horiz."]:
       if len(cacheLists)<=0:
         cacheLists+=getFutureRankingNDCGHorizontal(qExpVector,qRel,positionBias,n_futureSession,rankListLength,fairness_tradeoff_param,exploration_tradeoff_param)
       ranking=np.array(cacheLists.pop())
@@ -603,7 +603,7 @@ def get_ranking(qRel,qExpVector,fairness_strategy,fairness_tradeoff_param,explor
       ItemFreqEachRank=kwargs["ItemFreqEachRank"]
       ranking=MMF(RankingScore,ItemFreqEachRank,positionBias,rankListLength=rankListLength,fairness_tradeoff_param=fairness_tradeoff_param)
     elif fairness_strategy == "FairK":
-      Docunfairness=unfairnessDoc(qExpVector,qRel,"GradFair")
+      Docunfairness=unfairnessDoc(qExpVector,qRel,"MCFair")
       RankingScore=Docunfairness
       ranking=single_ranking(RankingScore,rankListLength=rankListLength)  
     elif fairness_strategy == "ExploreK":

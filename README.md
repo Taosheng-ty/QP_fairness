@@ -1,9 +1,25 @@
-# QP_fairness
-## To run GradFair
-please first run the following to generate experiment settings,
+## Create the env.
+    conda env create -f environment.yml
+then activate the env 
 
-            python scripts/datascriptsGradFairLTR/generatingSetting.py
+    conda activate FARA
+## Specify the data directory 
+Please download datasets and specify their directory in LTRlocal_dataset_info.txt.
 
-With the setting.json generated from above cmd, you can run the following to run a batch of scripts.
+## Then you can run our experiemtns with the following 
+    python  ./main.py   --progressbar=false --rankListLength=5 --query_least_size=5 --n_iteration=4000000 --queryMaximumLength=10000000000 --relvance_strategy=TrueAverage --positionBiasSeverity=1 --dataset_name=istella-s --fairness_strategy=FARA --n_futureSession=100 --fairness_tradeoff_param=0.2 --exploration_tradeoff_param=0.0 --random_seed=4 --log_dir=localOutput/
 
-            slurm_python --CODE_PATH=.  --Cmd_file=main.py --JSON_PATH=localOutput/Mar292022Data20Docs/ --python_ver=QPfairness --jobs_limit=20  --secs_each_sub=0.1 --json2args --plain_script   --white_list=ty_1+d_0+Mov+QP+expl --only_unfinished
+You can choose different datasets, relevance_strategy(online or post-processing) , fairness_strategies.
+
+
+
+
+
+
+
+
+
+
+
+
+

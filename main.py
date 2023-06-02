@@ -38,10 +38,10 @@ if __name__ == '__main__':
                     help="Maximum number of items that can be displayed.",
                     default=5)
     parser.add_argument("--fairness_strategy", type=str,
-                        choices=['FairCo', 'FairCo_multip.',"onlyFairness", 'GradFair',"Randomk","FairK",\
-                            "ExploreK","Topk","FairCo_maxnorm","QPFair","QPFair-Horiz.","ILP","LP","MMF","PLFair"],
+                        choices=['FairCo', 'MCFair',"Randomk","FairK",\
+                            "ExploreK","Topk","FARA","FARA-Horiz.","ILP","LP","MMF","PLFair"],
                         default="PLFair",
-                        help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPFair','GradFair','Randomk','Topk']")
+                        help="fairness_strategy, available choice is ['FairCo', 'FairCo_multip.', 'QPFair','MCFair','Randomk','Topk']")
     parser.add_argument("--fairness_tradeoff_param", type=float,
                             default=0.5,
                             help="fairness_tradeoff_param")
